@@ -182,7 +182,7 @@ export default async function HomePage({
       )}
 
       {/* ==================== 2. SEARCH BAR (below hero) ==================== */}
-      <div className="site-container pt-6 pb-2">
+      <div className="site-container pt-10 pb-4">
         <SearchBar
           placeholder="Search stories, businesses, events, neighborhoods…"
           className="mx-auto"
@@ -195,7 +195,7 @@ export default async function HomePage({
       </div>
 
       {/* ==================== 3. EDITOR'S PICKS + MAP + SIDEBAR A ==================== */}
-      <div className="site-container pt-20 pb-16 md:pt-28 md:pb-20">
+      <div className="site-container pt-12 pb-16 md:pt-16 md:pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-12 lg:gap-16">
 
           {/* ---------- MAIN CONTENT ---------- */}
@@ -323,7 +323,7 @@ export default async function HomePage({
                 </div>
               </div>
               <div className="mt-5">
-                <span className="px-3 py-1 bg-[#c1121f] text-white text-[10px] font-semibold uppercase tracking-eyebrow rounded-full">
+                <span className="text-[#c1121f] text-[10px] font-semibold uppercase tracking-eyebrow">
                   News
                 </span>
                 <h3 className="font-display text-xl md:text-2xl font-semibold text-white mt-3 leading-snug">
@@ -366,7 +366,7 @@ export default async function HomePage({
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-semibold uppercase tracking-eyebrow text-[#e6c46d]">
+                      <span className="text-[10px] font-semibold uppercase tracking-eyebrow text-[#c1121f]">
                         {item.category}
                       </span>
                       <h4 className="text-white text-sm font-semibold leading-snug mt-1 line-clamp-2 group-hover:text-[#fee198] transition-colors">

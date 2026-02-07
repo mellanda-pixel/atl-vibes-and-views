@@ -220,7 +220,7 @@ export function Header() {
         </nav>
 
         {/* CHANGE #4 — Submit Listing: yellow bg, hover to black */}
-        <Link href="/submit" className="hidden md:inline-flex items-center px-5 py-2 bg-[#e6c46d] text-black text-xs font-semibold uppercase tracking-eyebrow rounded-full hover:bg-black hover:text-white transition-colors">Submit Listing</Link>
+        <Link href="/submit" className="hidden md:inline-flex items-center px-5 py-2 bg-[#e6c46d] text-black text-xs font-semibold uppercase tracking-eyebrow rounded-full hover:bg-black hover:text-[#fee198] transition-colors">Submit Listing</Link>
       </div>
 
       {/* ===== CHRONICLE-STYLE DRAWER ===== */}

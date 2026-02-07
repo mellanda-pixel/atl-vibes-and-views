@@ -53,7 +53,7 @@ export function SearchBar({
           if (e.key === "Enter") pushSearch(value);
         }}
         placeholder={placeholder}
-        className="w-full pl-11 pr-10 py-3 text-sm bg-white border border-gray-200 rounded-full outline-none focus:border-[#e6c46d] transition-colors placeholder:text-gray-mid"
+        className="w-full pl-11 pr-10 py-3 text-sm bg-white border-2 border-[#e6c46d] rounded-full outline-none focus:border-[#d4a94e] focus:shadow-[0_0_0_3px_rgba(230,196,109,0.2)] transition-all placeholder:text-gray-mid"
       />
       {value && (
         <button

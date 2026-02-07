@@ -227,8 +227,8 @@ export function SubmitCTA({
 }) {
   return (
     <SidebarWidget className="bg-[#1a1a1a] border-none text-white">
-      <WidgetTitle>{heading}</WidgetTitle>
-      <p className="text-sm text-white/60 mb-4">{description}</p>
+      <WidgetTitle className="text-white">{heading}</WidgetTitle>
+      <p className="text-sm text-white/70 mb-4">{description}</p>
       <Link
         href={href}
         className="inline-flex items-center px-4 py-2 bg-gold-light text-black text-xs font-semibold uppercase tracking-eyebrow hover:bg-white hover:text-black transition-colors"
@@ -326,7 +326,7 @@ export function SubmitEventCTA() {
       </p>
       <Link
         href="/submit"
-        className="inline-flex items-center px-4 py-2 bg-[#fee198] text-black text-xs font-semibold uppercase tracking-eyebrow hover:bg-black hover:text-[#fee198] transition-colors"
+        className="inline-flex items-center px-5 py-2.5 bg-[#fee198] text-black text-xs font-semibold uppercase tracking-eyebrow rounded-full hover:bg-black hover:text-[#fee198] transition-colors"
       >
         Submit Event
       </Link>

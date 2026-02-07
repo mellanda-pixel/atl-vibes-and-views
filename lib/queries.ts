@@ -210,7 +210,7 @@ export async function getEvents(opts?: {
   let q = sb()
     .from("events")
     .select("*, neighborhoods(*), categories(*)")
-    .eq("status", opts?.status ?? "published")
+    .eq("status", opts?.status ?? "active")
     .order("start_date");
 
   if (opts?.featured) q = q.eq("is_featured", true);
