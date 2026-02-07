@@ -1,5 +1,7 @@
 "use client";
 
+import { use } from "react";
+
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -322,8 +324,9 @@ const AREA_EVENTS = [
 /* ============================================================
    PAGE COMPONENT
    ============================================================ */
-export default function AreaPage({ params }: { params: { slug: string } }) {
-  const area = AREA_DATA[params.slug];
+export default function AreaPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+  const area = AREA_DATA[slug];
 
   if (!area) {
     notFound();
@@ -418,7 +421,7 @@ export default function AreaPage({ params }: { params: { slug: string } }) {
                   </h2>
                 </div>
                 <Link
-                  href={`/stories?area=${params.slug}`}
+                  href={`/stories?area=${slug}`}
                   className="hidden md:flex items-center gap-1 text-xs font-semibold uppercase tracking-eyebrow text-red-brand hover:text-black transition-colors"
                 >
                   All Stories <ArrowRight size={14} />
@@ -464,7 +467,7 @@ export default function AreaPage({ params }: { params: { slug: string } }) {
                   </h2>
                 </div>
                 <Link
-                  href={`/hub/businesses?area=${params.slug}`}
+                  href={`/hub/businesses?area=${slug}`}
                   className="hidden md:flex items-center gap-1 text-xs font-semibold uppercase tracking-eyebrow text-red-brand hover:text-black transition-colors"
                 >
                   All Businesses <ArrowRight size={14} />
@@ -534,7 +537,7 @@ export default function AreaPage({ params }: { params: { slug: string } }) {
                   </h2>
                 </div>
                 <Link
-                  href={`/hub/events?area=${params.slug}`}
+                  href={`/hub/events?area=${slug}`}
                   className="hidden md:flex items-center gap-1 text-xs font-semibold uppercase tracking-eyebrow text-red-brand hover:text-black transition-colors"
                 >
                   All Events <ArrowRight size={14} />
@@ -661,7 +664,7 @@ export default function AreaPage({ params }: { params: { slug: string } }) {
               </h4>
               <ul className="space-y-1.5">
                 {Object.entries(AREA_DATA)
-                  .filter(([slug]) => slug !== params.slug)
+                  .filter(([slug]) => slug !== slug)
                   .slice(0, 6)
                   .map(([slug, data]) => (
                     <li key={slug}>
