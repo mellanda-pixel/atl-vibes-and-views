@@ -1,26 +1,208 @@
 @import "tailwindcss";
 
+/* ============================================================
+   ATL VIBES & VIEWS — Design System
+   The City. The Culture. The Conversation.
+   ============================================================ */
+
+/* --- Google Fonts --- */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap");
+
+/* --- Self-Hosted: Codec Pro (place files in /public/fonts/) --- */
+@font-face {
+  font-family: "Codec Pro";
+  src: url("/fonts/CodecPro-Regular.woff2") format("woff2"),
+       url("/fonts/CodecPro-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Codec Pro";
+  src: url("/fonts/CodecPro-Bold.woff2") format("woff2"),
+       url("/fonts/CodecPro-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- CSS Custom Properties --- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Colors */
+  --gold-light: #fee198;
+  --gold-dark: #e6c46d;
+  --red-brand: #c1121f;
+  --black: #1a1a1a;
+  --white: #ffffff;
+  --gray-light: #f5f5f5;
+  --gray-mid: #999999;
+  --gray-dark: #333333;
+
+  /* Typography */
+  --font-display: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-logo: "Codec Pro", "Inter", sans-serif;
+
+  /* Layout */
+  --max-width: 1280px;
+  --content-width: 720px;
+  --sidebar-width: 340px;
+  --gutter: 24px;
+  --section-spacing: 64px;
+  --section-spacing-lg: 96px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* --- Base Styles --- */
+body {
+  font-family: var(--font-body);
+  color: var(--black);
+  background-color: var(--white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* --- Headings --- */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--black);
+}
+
+/* --- Links --- */
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+/* --- Selection --- */
+::selection {
+  background-color: var(--gold-light);
+  color: var(--black);
+}
+
+/* --- Eyebrow / Label Utility --- */
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.eyebrow-red {
+  color: var(--red-brand);
+}
+
+.eyebrow-gold {
+  color: var(--gold-dark);
+}
+
+/* --- Drop Cap (Blog Posts) --- */
+.drop-cap::first-letter {
+  font-family: var(--font-display);
+  font-size: 4.5em;
+  float: left;
+  line-height: 0.8;
+  margin-right: 8px;
+  margin-top: 4px;
+  font-weight: 600;
+  color: var(--black);
+}
+
+/* --- Pull Quote --- */
+.pull-quote {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--black);
+  border-left: 4px solid var(--gold-light);
+  padding-left: 24px;
+  margin: 40px 0;
+}
+
+/* --- Category Tag --- */
+.category-tag {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  background-color: var(--gold-light);
+  color: var(--black);
+  transition: background-color var(--transition-fast);
+}
+
+.category-tag:hover {
+  background-color: var(--gold-dark);
+}
+
+.category-tag--featured {
+  background-color: var(--red-brand);
+  color: var(--white);
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-mid);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-dark);
+}
+
+/* --- Container Utility --- */
+.site-container {
+  max-width: var(--max-width);
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+  margin: 0 auto;
+}
+
+/* --- Content + Sidebar Layout --- */
+.content-with-sidebar {
+  display: grid;
+  grid-template-columns: 1fr var(--sidebar-width);
+  gap: var(--gutter);
+}
+
+@media (max-width: 1024px) {
+  .content-with-sidebar {
+    grid-template-columns: 1fr;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* --- Horizontal Rule --- */
+hr {
+  border: none;
+  border-top: 1px solid #e5e5e5;
+  margin: var(--gutter) 0;
+}
+
+/* --- Focus States (Accessibility) --- */
+:focus-visible {
+  outline: 2px solid var(--gold-dark);
+  outline-offset: 2px;
 }
