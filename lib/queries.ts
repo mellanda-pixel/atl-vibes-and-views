@@ -132,7 +132,7 @@ export async function getBlogPostBySlug(
     .eq("status", "published")
     .single();
   if (error && error.code !== "PGRST116") throw error;
-  return data as BlogPostWithAuthor;
+  return data as BlogPostWithAuthor | null;
 }
 
 /* ============================================================
@@ -178,7 +178,7 @@ export async function getBusinessBySlug(
     .eq("slug", slug)
     .single();
   if (error && error.code !== "PGRST116") throw error;
-  return data as BusinessListingWithNeighborhood;
+  return data as BusinessListingWithNeighborhood | null;
 }
 
 /* ============================================================
@@ -225,7 +225,7 @@ export async function getEventBySlug(
     .eq("slug", slug)
     .single();
   if (error && error.code !== "PGRST116") throw error;
-  return data as EventItemWithNeighborhood;
+  return data as EventItemWithNeighborhood | null;
 }
 
 /* ============================================================
