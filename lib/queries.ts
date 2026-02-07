@@ -367,21 +367,6 @@ export async function getUpcomingEvents(opts?: {
   });
 }
 
-/** Average rating for a business from reviews table */
-export async function getAverageRating(
-  businessId: string
-): Promise<{ avg: number; count: number }> {
-  const { data, error } = await sb()
-    .from("reviews")
-    .select("rating")
-    .eq("business_id", businessId)
-    .eq("status", "published");
-  if (error) throw error;
-  const ratings = (data ?? []).map((r) => r.rating);
-  if (!ratings.length) return { avg: 0, count: 0 };
-  const sum = ratings.reduce((a, b) => a + b, 0);
-  return { avg: Math.round((sum / ratings.length) * 10) / 10, count: ratings.length };
-}
 
 /* ============================================================
    GLOBAL SEARCH — searches across all content types
@@ -409,7 +394,8 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     .select("id, title, slug, excerpt, featured_image_url")
     .eq("status", "published")
     .or(`title.ilike.%${term}%,excerpt.ilike.%${term}%`)
-    .limit(5);
+    .limit(5)
+    .returns<{ id: string; title: string; slug: string; excerpt: string | null; featured_image_url: string | null }[]>();
 
   if (posts) {
     results.push(
@@ -433,7 +419,8 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     .or(
       `business_name.ilike.%${term}%,description.ilike.%${term}%,tagline.ilike.%${term}%`
     )
-    .limit(5);
+    .limit(5)
+    .returns<{ id: string; business_name: string; slug: string; tagline: string | null; logo: string | null }[]>();
 
   if (biz) {
     results.push(
@@ -455,7 +442,8 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     .select("id, title, slug, tagline, featured_image_url")
     .eq("status", "published")
     .or(`title.ilike.%${term}%,description.ilike.%${term}%`)
-    .limit(5);
+    .limit(5)
+    .returns<{ id: string; title: string; slug: string; tagline: string | null; featured_image_url: string | null }[]>();
 
   if (events) {
     results.push(
@@ -477,7 +465,8 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     .select("id, name, slug, tagline")
     .eq("is_active", true)
     .ilike("name", `%${term}%`)
-    .limit(5);
+    .limit(5)
+    .returns<{ id: string; name: string; slug: string; tagline: string | null }[]>();
 
   if (hoods) {
     results.push(
@@ -498,7 +487,8 @@ export async function globalSearch(query: string): Promise<SearchResult[]> {
     .select("id, name, slug, tagline")
     .eq("is_active", true)
     .ilike("name", `%${term}%`)
-    .limit(5);
+    .limit(5)
+    .returns<{ id: string; name: string; slug: string; tagline: string | null }[]>();
 
   if (areas) {
     results.push(
@@ -528,7 +518,8 @@ export async function getNeighborhoodIdsForArea(
     .from("neighborhoods")
     .select("id")
     .eq("area_id", areaId)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .returns<{ id: string }[]>();
   if (error) throw error;
   return (data ?? []).map((n) => n.id);
 }
