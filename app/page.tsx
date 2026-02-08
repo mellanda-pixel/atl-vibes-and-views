@@ -148,9 +148,9 @@ export default async function HomePage({
           >
             <div className="relative w-full h-[45vh] sm:h-[55vh] md:h-[80vh] min-h-[340px] max-h-[640px] overflow-hidden">
               <Image
-                src={
-                  heroPost.featured_image_url ||
-                  ph("Featured Story", 1920, 900)
+                  src={
+  heroPost.featured_image_url ||
+  "/images/default-hero.png"
                 }
                 alt={heroPost.title}
                 fill
