@@ -694,55 +694,15 @@ export default async function NeighborhoodsLandingPage({
           {/* ---------- SIDEBAR B (NEW) ---------- */}
           <aside className="hidden lg:block">
             <Sidebar>
-              {/* 1. Social Share */}
-              <SidebarWidget className="border-none bg-transparent px-0">
-                <WidgetTitle>Share This Page</WidgetTitle>
-                <div className="flex items-center gap-3 pt-2">
-                  <a
-                    href="https://twitter.com/intent/tweet?url=https://atlvibesandviews.com/neighborhoods&text=Explore+Atlanta+Neighborhoods"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                    aria-label="Share on X"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                    </svg>
-                  </a>
-                  <a
-                    href="https://www.facebook.com/sharer/sharer.php?u=https://atlvibesandviews.com/neighborhoods"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                    aria-label="Share on Facebook"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                    </svg>
-                  </a>
-                  <a
-                    href="https://www.linkedin.com/sharing/share-offsite/?url=https://atlvibesandviews.com/neighborhoods"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                    aria-label="Share on LinkedIn"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                    </svg>
-                  </a>
-                </div>
-              </SidebarWidget>
-
-              {/* 2. SubmitCTA */}
+              {/* 1. SubmitCTA */}
               <SubmitCTA />
 
-              {/* 3. Featured in the Hub (horizontal: image left, text right) */}
-              <SidebarWidget>
-                <WidgetTitle className="text-[#c1121f]">
-                  Featured in the Hub
-                </WidgetTitle>
-                {featuredBiz ? (
+              {/* 2. Featured in the Hub / Vertical Ad fallback */}
+              {featuredBiz ? (
+                <SidebarWidget>
+                  <WidgetTitle className="text-[#c1121f]">
+                    Featured in the Hub
+                  </WidgetTitle>
                   <Link
                     href={`/places/${featuredBiz.slug}`}
                     className="group flex gap-4 items-start"
@@ -782,31 +742,22 @@ export default async function NeighborhoodsLandingPage({
                       )}
                     </div>
                   </Link>
-                ) : (
-                  <Link
-                    href="/submit"
-                    className="group flex gap-4 items-start"
-                  >
-                    <div className="relative w-24 h-20 shrink-0 overflow-hidden bg-[#1a1a1a] flex items-center justify-center">
-                      <Image
-                        src="https://placehold.co/200x160/1a1a1a/e6c46d?text=Your+Biz"
-                        alt="Get featured in the Hub"
-                        fill
-                        unoptimized
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-display text-sm font-semibold text-black group-hover:text-red-brand transition-colors leading-tight">
-                        Your Business Here
-                      </h4>
-                      <p className="text-[11px] text-gray-mid mt-1">
-                        Get featured in front of thousands of Atlantans.
-                      </p>
-                    </div>
-                  </Link>
-                )}
-              </SidebarWidget>
+                </SidebarWidget>
+              ) : (
+                <Link
+                  href="/partner"
+                  className="block bg-gray-100 border border-dashed border-gray-300 hover:border-[#e6c46d] hover:bg-gray-50 transition-colors group min-h-[600px] flex items-center justify-center"
+                >
+                  <div className="text-center px-6">
+                    <span className="text-xs text-gray-mid uppercase tracking-eyebrow group-hover:text-black transition-colors">
+                      Advertise Here
+                    </span>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Reach thousands of Atlanta locals
+                    </p>
+                  </div>
+                </Link>
+              )}
             </Sidebar>
           </aside>
         </div>
