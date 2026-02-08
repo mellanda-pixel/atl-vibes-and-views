@@ -428,7 +428,7 @@ export default async function NeighborhoodsLandingPage({
       </div>
 
       {/* ========== 4. HORIZONTAL AD (full-width) ========== */}
-      <div className="site-container pb-0">
+      <div className="site-container pb-12 md:pb-16">
         <Link
           href="/hub/businesses"
           className="block bg-gray-100 flex items-center justify-center py-12 border border-dashed border-gray-300 hover:border-[#e6c46d] hover:bg-gray-50 transition-colors group"
