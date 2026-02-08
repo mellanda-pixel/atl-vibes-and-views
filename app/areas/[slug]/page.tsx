@@ -4,22 +4,28 @@ import { notFound } from "next/navigation";
 import { MapPin, Calendar, ArrowRight, ChevronRight } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import {
+  Sidebar,
+  NewsletterWidget,
+  AdPlacement,
+  NeighborhoodsWidget,
+  SubmitCTA,
+} from "@/components/Sidebar";
+import {
   getAreaBySlug,
-  getAreas,
-  getNeighborhoods,
   getNeighborhoodIdsForArea,
+  getNeighborhoods,
   getBlogPosts,
   getBusinesses,
   getEvents,
+  getCategoryBySlug,
 } from "@/lib/queries";
 
 /* ============================================================
    HELPERS
    ============================================================ */
-const PLACEHOLDER_IMG =
-  "https://placehold.co/1920x600/1a1a1a/e6c46d?text=Area";
-const PLACEHOLDER_BIZ =
-  "https://placehold.co/400x280/c1121f/fee198?text=Business";
+const PH_HERO = "https://placehold.co/1920x600/1a1a1a/e6c46d?text=Area";
+const PH_POST = "https://placehold.co/600x400/1a1a1a/e6c46d?text=Story";
+const PH_BIZ = "https://placehold.co/600x400/c1121f/fee198?text=Business";
 
 function formatDate(dateStr?: string | null): string {
   if (!dateStr) return "";
@@ -38,10 +44,31 @@ function eventDateParts(dateStr: string): { month: string; day: string } {
   };
 }
 
+/* Deterministic headline rotation based on slug */
+function pickHeadline(slug: string, options: string[]): string {
+  let hash = 0;
+  for (let i = 0; i < slug.length; i++) {
+    hash = ((hash << 5) - hash + slug.charCodeAt(i)) | 0;
+  }
+  return options[Math.abs(hash) % options.length];
+}
+
+const EATS_HEADLINES = [
+  "Best Places to Eat in",
+  "Where to Eat in",
+  "Top Eats & Drinks in",
+];
+
+const EVENTS_HEADLINES = [
+  "Things to Do in",
+  "Latest Events in",
+  "What\u2019s Happening in",
+];
+
 /* ============================================================
-   AREA DETAIL PAGE — Server Component
+   AREA DETAIL PAGE — /areas/[slug]
    ============================================================ */
-export default async function AreaPage({
+export default async function AreaDetailPage({
   params,
   searchParams,
 }: {
@@ -52,44 +79,85 @@ export default async function AreaPage({
   const { q } = await searchParams;
   const search = q?.trim() || undefined;
 
-  /* --- Fetch area --- */
+  /* ── Step 0: Area record + neighborhood IDs ── */
   const area = await getAreaBySlug(slug);
   if (!area) return notFound();
 
-  /* --- Fetch all related data in parallel --- */
-  const neighborhoodIds = await getNeighborhoodIdsForArea(area!.id);
+  const neighborhoodIds = await getNeighborhoodIdsForArea(area.id);
+  const hasNeighborhoods = neighborhoodIds.length > 0;
 
-  const [neighborhoods, posts, businesses, events, allAreas] =
+  /* ── Dining category for Eats & Drinks filter ── */
+  const diningCat = await getCategoryBySlug("dining").catch(() => null);
+
+  /* ── Parallel data fetch ── */
+  const [sidebarNeighborhoods, areaPosts, eatsRaw, eventsRaw] =
     await Promise.all([
-      getNeighborhoods({ areaId: area.id, search }),
-      getBlogPosts({
-        neighborhoodIds: neighborhoodIds.length ? neighborhoodIds : undefined,
-        limit: 4,
-        search,
-      }).catch(() => []),
-      getBusinesses({
-        neighborhoodIds: neighborhoodIds.length ? neighborhoodIds : undefined,
-        limit: 4,
-        search,
-      }).catch(() => []),
-      getEvents({
-        neighborhoodIds: neighborhoodIds.length ? neighborhoodIds : undefined,
-        upcoming: true,
-        limit: 5,
-        search,
-      }).catch(() => []),
-      getAreas().catch(() => []),
+      /* Sidebar: 10 neighborhoods for this area */
+      getNeighborhoods({ areaId: area.id, limit: 10 }),
+
+      /* Stories: blog posts linked to area's neighborhoods */
+      hasNeighborhoods
+        ? getBlogPosts({
+            neighborhoodIds,
+            limit: 4,
+            search,
+          }).catch(() => [])
+        : Promise.resolve([]),
+
+      /* Eats & Drinks: dining businesses in area */
+      hasNeighborhoods
+        ? getBusinesses({
+            ...(diningCat ? { categoryId: diningCat.id } : {}),
+            neighborhoodIds,
+            limit: 6,
+            search,
+          }).catch(() => [])
+        : Promise.resolve([]),
+
+      /* Events: upcoming in area */
+      hasNeighborhoods
+        ? getEvents({
+            neighborhoodIds,
+            upcoming: true,
+            limit: 5,
+            search,
+          }).catch(() => [])
+        : Promise.resolve([]),
     ]);
 
-  const otherAreas = allAreas.filter((a) => a.slug !== slug).slice(0, 6);
+  /* ── Stories fallback: if 0 area-specific, show city-wide (limit 3) ── */
+  let posts = areaPosts;
+  if (posts.length === 0 && !search) {
+    posts = await getBlogPosts({ limit: 3 }).catch(() => []);
+  }
+
+  /* ── Dedup: track used IDs so nothing appears twice ── */
+  const usedIds = new Set<string>();
+  const stories = posts.slice(0, 3);
+  stories.forEach((p) => usedIds.add(p.id));
+
+  const eatsBusinesses = eatsRaw.filter((b) => !usedIds.has(b.id));
+  eatsBusinesses.forEach((b) => usedIds.add(b.id));
+
+  const events = eventsRaw.filter((e) => !usedIds.has(e.id));
+
+  /* ── Rotating headlines ── */
+  const eatsHeadline = `${pickHeadline(slug, EATS_HEADLINES)} ${area.name}`;
+  const eventsHeadline = `${pickHeadline(slug, EVENTS_HEADLINES)} ${area.name}`;
+
+  /* ── Sidebar neighborhood data ── */
+  const sidebarNeighborhoodLinks = sidebarNeighborhoods.map((n) => ({
+    name: n.name,
+    slug: n.slug,
+  }));
 
   return (
     <>
-      {/* ========== HERO ========== */}
+      {/* ========== 1. HERO ========== */}
       <section className="relative w-full">
         <div className="relative w-full aspect-[21/7] md:aspect-[21/6] overflow-hidden">
           <Image
-            src={area.hero_image_url || PLACEHOLDER_IMG}
+            src={area.hero_image_url || PH_HERO}
             alt={area.name}
             fill
             unoptimized
@@ -99,10 +167,10 @@ export default async function AreaPage({
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         </div>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-          <span className="text-gold-dark text-[11px] font-semibold uppercase tracking-[0.15em] mb-3">
+          <span className="text-[#e6c46d] text-[11px] font-semibold uppercase tracking-[0.15em] mb-3">
             Explore Atlanta
           </span>
-          <h1 className="font-display text-4xl md:text-6xl lg:text-hero font-semibold text-white">
+          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold text-white">
             {area.name}
           </h1>
           {area.tagline && (
@@ -113,47 +181,7 @@ export default async function AreaPage({
         </div>
       </section>
 
-      {/* ========== STATS BAR ========== */}
-      <section className="bg-[#1a1a1a]">
-        <div className="site-container py-5">
-          <div className="flex items-center justify-center gap-8 md:gap-16">
-            <div className="text-center">
-              <div className="text-gold-light font-display text-2xl md:text-3xl font-semibold">
-                {neighborhoods.length}
-              </div>
-              <div className="text-white/40 text-[10px] md:text-xs uppercase tracking-[0.1em] mt-1">
-                Neighborhoods
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-gold-light font-display text-2xl md:text-3xl font-semibold">
-                {businesses.length > 0 ? `${businesses.length}+` : "—"}
-              </div>
-              <div className="text-white/40 text-[10px] md:text-xs uppercase tracking-[0.1em] mt-1">
-                Businesses
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-gold-light font-display text-2xl md:text-3xl font-semibold">
-                {posts.length > 0 ? posts.length : "—"}
-              </div>
-              <div className="text-white/40 text-[10px] md:text-xs uppercase tracking-[0.1em] mt-1">
-                Stories
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-gold-light font-display text-2xl md:text-3xl font-semibold">
-                {events.length > 0 ? events.length : "—"}
-              </div>
-              <div className="text-white/40 text-[10px] md:text-xs uppercase tracking-[0.1em] mt-1">
-                Events
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========== BREADCRUMB + SEARCH ========== */}
+      {/* ========== 2. BREADCRUMBS ========== */}
       <div className="site-container pt-6 pb-2">
         <nav className="flex items-center gap-2 text-xs text-gray-mid mb-4">
           <Link href="/" className="hover:text-black transition-colors">
@@ -166,8 +194,10 @@ export default async function AreaPage({
           <ChevronRight size={12} />
           <span className="text-black font-medium">{area.name}</span>
         </nav>
+
+        {/* ========== 3. SEARCH BAR ========== */}
         <SearchBar
-          placeholder={`Search in ${area.name}…`}
+          placeholder={`Search in ${area.name}\u2026`}
           className="max-w-md"
         />
         {search && (
@@ -177,149 +207,164 @@ export default async function AreaPage({
         )}
       </div>
 
-      {/* ========== MAIN CONTENT ========== */}
-      <div className="site-container py-8 md:py-12">
+      {/* ========== 4. MAIN CONTENT + SIDEBAR ========== */}
+      <div className="site-container pt-12 pb-16 md:pt-16 md:pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-12 lg:gap-16">
-          {/* --- Main Column --- */}
-          <div>
-            {/* About Section */}
-            {area.description && (
-              <section className="mb-14">
-                <h2 className="font-display text-section-sm md:text-section font-semibold text-black mb-4">
-                  About {area.name}
-                </h2>
-                <p className="text-gray-dark leading-relaxed text-base">
-                  {area.description}
-                </p>
-              </section>
-            )}
-
-            {/* ===== STORIES ===== */}
-            {posts.length > 0 && (
-              <section className="mb-14">
-                <div className="flex items-end justify-between mb-6">
-                  <div>
-                    <span className="text-red-brand text-[11px] font-semibold uppercase tracking-[0.1em] block mb-1">
-                      Stories
-                    </span>
-                    <h2 className="font-display text-section-sm font-semibold text-black">
-                      Latest from {area.name}
-                    </h2>
-                  </div>
-                  <Link
-                    href={`/stories?area=${slug}`}
-                    className="hidden md:flex items-center gap-1 text-xs font-semibold uppercase tracking-eyebrow text-red-brand hover:text-black transition-colors"
-                  >
-                    All Stories <ArrowRight size={14} />
-                  </Link>
+          {/* ---------- Main Column ---------- */}
+          <div className="space-y-28">
+            {/* ===== STORIES (editorial) ===== */}
+            <section>
+              <div className="flex items-end justify-between mb-10 border-b border-gray-200 pb-4">
+                <div>
+                  <span className="text-[#c1121f] text-[11px] font-semibold uppercase tracking-eyebrow">
+                    Stories
+                  </span>
+                  <h2 className="font-display text-3xl md:text-4xl font-semibold text-black leading-tight mt-1">
+                    Latest from {area.name}
+                  </h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {posts.map((post) => (
+                <Link
+                  href="/city-watch"
+                  className="flex items-center gap-1 text-xs font-semibold uppercase tracking-eyebrow text-black hover:text-red-brand transition-colors shrink-0 pb-1"
+                >
+                  See All <ArrowRight size={14} />
+                </Link>
+              </div>
+              {stories.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                  {stories.map((post) => (
                     <Link
                       key={post.id}
                       href={`/stories/${post.slug}`}
                       className="group block"
                     >
-                      <div className="relative aspect-[3/2] overflow-hidden mb-3">
+                      <div className="relative aspect-[4/3] overflow-hidden mb-5">
                         <Image
-                          src={post.featured_image_url || PLACEHOLDER_IMG}
+                          src={post.featured_image_url || PH_POST}
                           alt={post.title}
                           fill
                           unoptimized
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
-                      {post.type && (
-                        <span className="text-red-brand text-[11px] font-semibold uppercase tracking-eyebrow">
-                          {post.type}
-                        </span>
-                      )}
-                      <h3 className="font-display text-lg md:text-xl font-semibold text-black leading-snug mt-1 group-hover:text-red-brand transition-colors">
+                      <div className="flex items-center gap-2 mb-3">
+                        {post.categories?.name && (
+                          <span className="px-3 py-1 bg-gold-light text-black text-[10px] font-semibold uppercase tracking-eyebrow rounded-full">
+                            {post.categories.name}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="font-display text-xl md:text-2xl font-semibold text-black leading-snug group-hover:text-red-brand transition-colors">
                         {post.title}
                       </h3>
-                      <p className="text-gray-mid text-xs mt-2">
-                        {formatDate(post.published_at)}
-                      </p>
+                      {post.published_at && (
+                        <p className="text-gray-mid text-xs mt-2">
+                          {formatDate(post.published_at)}
+                        </p>
+                      )}
                     </Link>
                   ))}
                 </div>
-              </section>
-            )}
+              ) : (
+                <p className="text-gray-mid text-base">
+                  No stories in {area.name} yet. Check back soon.
+                </p>
+              )}
+            </section>
 
-            {/* ===== BUSINESSES ===== */}
-            {businesses.length > 0 && (
-              <section className="mb-14">
-                <div className="flex items-end justify-between mb-6">
-                  <div>
-                    <span className="text-red-brand text-[11px] font-semibold uppercase tracking-[0.1em] block mb-1">
-                      Directory
-                    </span>
-                    <h2 className="font-display text-section-sm font-semibold text-black">
-                      {area.name} Businesses
-                    </h2>
-                  </div>
-                  <Link
-                    href={`/hub/businesses?area=${slug}`}
-                    className="hidden md:flex items-center gap-1 text-xs font-semibold uppercase tracking-eyebrow text-red-brand hover:text-black transition-colors"
-                  >
-                    All Businesses <ArrowRight size={14} />
-                  </Link>
+            {/* ===== AD SPACE — horizontal (matches homepage) ===== */}
+            <section>
+              <Link
+                href="/hub/businesses"
+                className="block bg-gray-100 flex items-center justify-center py-12 border border-dashed border-gray-300 hover:border-[#e6c46d] hover:bg-gray-50 transition-colors group"
+              >
+                <div className="text-center">
+                  <span className="text-xs text-gray-mid uppercase tracking-eyebrow group-hover:text-black transition-colors">
+                    Advertise Here
+                  </span>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Reach thousands of Atlanta locals
+                  </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {businesses.map((biz) => (
+              </Link>
+            </section>
+
+            {/* ===== EATS & DRINKS ===== */}
+            <section>
+              <div className="flex items-end justify-between mb-10 border-b border-gray-200 pb-4">
+                <div>
+                  <span className="text-[#c1121f] text-[11px] font-semibold uppercase tracking-eyebrow">
+                    Eats &amp; Drinks
+                  </span>
+                  <h2 className="font-display text-3xl md:text-4xl font-semibold text-black leading-tight mt-1">
+                    {eatsHeadline}
+                  </h2>
+                </div>
+                <Link
+                  href="/hub/eats-and-drinks"
+                  className="flex items-center gap-1 text-xs font-semibold uppercase tracking-eyebrow text-black hover:text-red-brand transition-colors shrink-0 pb-1"
+                >
+                  See All <ArrowRight size={14} />
+                </Link>
+              </div>
+              {eatsBusinesses.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                  {eatsBusinesses.map((biz) => (
                     <Link
                       key={biz.id}
                       href={`/places/${biz.slug}`}
-                      className="group border border-gray-100 bg-white hover:shadow-md transition-shadow"
+                      className="group block"
                     >
-                      <div className="relative aspect-[3/2] overflow-hidden">
+                      <div className="relative aspect-[4/3] overflow-hidden mb-4">
                         <Image
-                          src={biz.logo || PLACEHOLDER_BIZ}
+                          src={biz.logo || PH_BIZ}
                           alt={biz.business_name}
                           fill
                           unoptimized
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                         {biz.is_featured && (
-                          <span className="absolute top-3 left-3 px-2 py-0.5 bg-red-brand text-white text-[10px] font-semibold uppercase tracking-eyebrow">
+                          <span className="absolute top-3 left-3 px-2 py-0.5 bg-[#c1121f] text-white text-[10px] font-semibold uppercase tracking-eyebrow">
                             Featured
                           </span>
                         )}
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-display text-lg font-semibold text-black mt-1 group-hover:text-red-brand transition-colors">
-                          {biz.business_name}
-                        </h3>
-                        <div className="flex items-center gap-1 mt-2 text-sm text-gray-mid">
-                          <MapPin size={13} />
-                          {biz.neighborhoods?.name ?? "Atlanta"}
-                        </div>
+                      <h3 className="font-display text-lg font-semibold text-black group-hover:text-red-brand transition-colors">
+                        {biz.business_name}
+                      </h3>
+                      <div className="flex items-center gap-1 mt-2 text-sm text-gray-mid">
+                        <MapPin size={13} />
+                        {biz.neighborhoods?.name ?? "Atlanta"}
                       </div>
                     </Link>
                   ))}
                 </div>
-              </section>
-            )}
+              ) : (
+                <p className="text-gray-mid text-base">
+                  No restaurants listed in {area.name} yet. Check back soon.
+                </p>
+              )}
+            </section>
 
-            {/* ===== EVENTS ===== */}
-            {events.length > 0 && (
-              <section>
-                <div className="flex items-end justify-between mb-6">
-                  <div>
-                    <span className="text-red-brand text-[11px] font-semibold uppercase tracking-[0.1em] block mb-1">
-                      Happening
-                    </span>
-                    <h2 className="font-display text-section-sm font-semibold text-black">
-                      What&rsquo;s Happening in {area.name}
-                    </h2>
-                  </div>
-                  <Link
-                    href={`/hub/events?area=${slug}`}
-                    className="hidden md:flex items-center gap-1 text-xs font-semibold uppercase tracking-eyebrow text-red-brand hover:text-black transition-colors"
-                  >
-                    All Events <ArrowRight size={14} />
-                  </Link>
+            {/* ===== EVENTS / THINGS TO DO ===== */}
+            <section>
+              <div className="flex items-end justify-between mb-10 border-b border-gray-200 pb-4">
+                <div>
+                  <span className="text-[#c1121f] text-[11px] font-semibold uppercase tracking-eyebrow">
+                    Events
+                  </span>
+                  <h2 className="font-display text-3xl md:text-4xl font-semibold text-black leading-tight mt-1">
+                    {eventsHeadline}
+                  </h2>
                 </div>
+                <Link
+                  href="/hub/events"
+                  className="flex items-center gap-1 text-xs font-semibold uppercase tracking-eyebrow text-black hover:text-red-brand transition-colors shrink-0 pb-1"
+                >
+                  See All <ArrowRight size={14} />
+                </Link>
+              </div>
+              {events.length > 0 ? (
                 <div className="space-y-0 divide-y divide-gray-100">
                   {events.map((event) => {
                     const { month, day } = eventDateParts(event.start_date);
@@ -329,7 +374,7 @@ export default async function AreaPage({
                         href={`/events/${event.slug}`}
                         className="group flex items-center gap-4 py-4 first:pt-0 last:pb-0"
                       >
-                        <div className="shrink-0 w-14 h-14 bg-red-brand text-white flex flex-col items-center justify-center">
+                        <div className="shrink-0 w-14 h-14 bg-[#c1121f] text-white flex flex-col items-center justify-center">
                           <span className="text-[10px] font-semibold uppercase">
                             {month}
                           </span>
@@ -359,15 +404,18 @@ export default async function AreaPage({
                     );
                   })}
                 </div>
-              </section>
-            )}
+              ) : (
+                <p className="text-gray-mid text-base">
+                  No upcoming events in {area.name} right now.
+                </p>
+              )}
+            </section>
 
-            {/* ===== NO RESULTS ===== */}
+            {/* ===== NO RESULTS (search mode only) ===== */}
             {search &&
-              posts.length === 0 &&
-              businesses.length === 0 &&
-              events.length === 0 &&
-              neighborhoods.length === 0 && (
+              stories.length === 0 &&
+              eatsBusinesses.length === 0 &&
+              events.length === 0 && (
                 <section className="text-center py-16">
                   <p className="text-gray-mid text-lg">
                     No results for &ldquo;{search}&rdquo; in {area.name}
@@ -376,106 +424,23 @@ export default async function AreaPage({
               )}
           </div>
 
-          {/* --- Sidebar --- */}
-          <aside className="space-y-8">
-            {/* Neighborhoods Widget */}
-            {neighborhoods.length > 0 && (
-              <div className="border border-gray-100 p-5">
-                <h4 className="font-display text-lg font-semibold mb-4">
-                  Neighborhoods in {area.name}
-                </h4>
-                <ul className="space-y-1.5">
-                  {neighborhoods.map((n) => (
-                    <li key={n.id}>
-                      <Link
-                        href={`/neighborhoods/${n.slug}`}
-                        className="flex items-center justify-between text-sm text-gray-dark hover:text-black transition-colors py-1.5"
-                      >
-                        <span>{n.name}</span>
-                        <ArrowRight size={14} className="text-gray-mid" />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Newsletter Widget */}
-            <div className="bg-gold-light p-5">
-              <h4 className="font-display text-lg font-semibold mb-2">
-                {area.name} Updates
-              </h4>
-              <p className="text-sm text-gray-dark mb-4">
-                Get the latest stories, events, and business openings from{" "}
-                {area.name}.
-              </p>
-              <form>
-                <input
-                  type="email"
-                  placeholder="Your email address"
-                  className="w-full px-3 py-2.5 text-sm border border-black/10 bg-white outline-none focus:border-black transition-colors mb-3"
-                />
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-black text-white text-xs font-semibold uppercase tracking-eyebrow hover:bg-gray-dark transition-colors"
-                >
-                  Subscribe
-                </button>
-              </form>
-            </div>
-
-            {/* Submit CTA */}
-            <div className="bg-[#1a1a1a] p-5 text-white">
-              <h4 className="font-display text-lg font-semibold mb-2">
-                Own a Business in {area.name}?
-              </h4>
-              <p className="text-sm text-white/60 mb-4">
-                Get your business in front of thousands of Atlantans.
-              </p>
-              <Link
-                href="/submit"
-                className="inline-flex items-center px-4 py-2 bg-gold-light text-black text-xs font-semibold uppercase tracking-eyebrow hover:bg-gold-dark transition-colors"
-              >
-                Get Listed
-              </Link>
-            </div>
-
-            {/* Ad Placeholder */}
-            <div className="bg-gray-light flex items-center justify-center">
-              <div className="w-[300px] h-[250px] flex items-center justify-center border border-dashed border-gray-mid/30">
-                <span className="text-xs text-gray-mid uppercase tracking-eyebrow">
-                  Ad — Sidebar
-                </span>
-              </div>
-            </div>
-
-            {/* Other Areas Widget */}
-            {otherAreas.length > 0 && (
-              <div className="border border-gray-100 p-5">
-                <h4 className="font-display text-lg font-semibold mb-4">
-                  Explore Other Areas
-                </h4>
-                <ul className="space-y-1.5">
-                  {otherAreas.map((a) => (
-                    <li key={a.id}>
-                      <Link
-                        href={`/areas/${a.slug}`}
-                        className="flex items-center justify-between text-sm text-gray-dark hover:text-black transition-colors py-1.5"
-                      >
-                        <span>{a.name}</span>
-                        <ArrowRight size={14} className="text-gray-mid" />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/areas"
-                  className="inline-block mt-4 text-xs font-semibold uppercase tracking-eyebrow text-red-brand hover:text-black transition-colors"
-                >
-                  See All Areas →
-                </Link>
-              </div>
-            )}
+          {/* ---------- Sidebar (LOCKED ORDER) ---------- */}
+          <aside className="hidden lg:block">
+            <Sidebar>
+              <NewsletterWidget
+                title={`${area.name} Updates`}
+                description={`Get the latest stories, events, and business openings from ${area.name}.`}
+              />
+              <AdPlacement slot="sidebar_top" />
+              <NeighborhoodsWidget
+                title={`Neighborhoods in ${area.name}`}
+                neighborhoods={sidebarNeighborhoodLinks}
+              />
+              <SubmitCTA
+                heading={`Own a Business in ${area.name}?`}
+                description="Get your business in front of thousands of Atlantans."
+              />
+            </Sidebar>
           </aside>
         </div>
       </div>
