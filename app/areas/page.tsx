@@ -320,17 +320,14 @@ export default async function AreasLandingPage({
                   </p>
                 </div>
               </div>
-              {/* Text list fallback (always shown until map is live) */}
-              <div className="flex flex-wrap justify-center gap-3 mt-8">
-                {areas.map((a) => (
-                  <Link
-                    key={a.id}
-                    href={`/areas/${a.slug}`}
-                    className="px-5 py-2.5 bg-black text-white text-xs font-semibold uppercase tracking-eyebrow rounded-full hover:bg-[#fee198] hover:text-black transition-colors"
-                  >
-                    {a.name}
-                  </Link>
-                ))}
+              {/* Transition CTA to neighborhoods */}
+              <div className="flex justify-center mt-8 pt-6 border-t border-gray-100">
+                <Link
+                  href="/neighborhoods"
+                  className="flex items-center gap-2 text-sm font-semibold text-black hover:text-[#c1121f] transition-colors"
+                >
+                  Explore Atlanta Neighborhoods <ArrowRight size={15} />
+                </Link>
               </div>
             </section>
 
@@ -359,15 +356,15 @@ export default async function AreasLandingPage({
                 href="/city-watch"
               />
               {feed.length > 0 ? (
-                <div className="columns-1 sm:columns-2 lg:columns-2 gap-8 space-y-8">
+                <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
                   {feed.map((item) =>
                     item.kind === "blog" ? (
                       <Link
                         key={item.id}
                         href={`/stories/${item.slug}`}
-                        className="group block break-inside-avoid"
+                        className="group block break-inside-avoid mb-6"
                       >
-                        <div className="relative aspect-[4/3] overflow-hidden mb-4">
+                        <div className="relative aspect-[3/2] overflow-hidden mb-3">
                           <Image
                             src={item.image || PH_POST}
                             alt={item.title}
@@ -376,18 +373,16 @@ export default async function AreasLandingPage({
                             className="object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                         </div>
-                        <div className="flex items-center gap-2 mb-2">
-                          {item.category && (
-                            <span className="px-3 py-1 bg-gold-light text-black text-[10px] font-semibold uppercase tracking-eyebrow rounded-full">
-                              {item.category}
-                            </span>
-                          )}
-                        </div>
-                        <h3 className="font-display text-xl font-semibold text-black leading-snug group-hover:text-red-brand transition-colors">
+                        {item.category && (
+                          <span className="inline-block px-2.5 py-0.5 bg-gold-light text-black text-[9px] font-semibold uppercase tracking-eyebrow rounded-full mb-1.5">
+                            {item.category}
+                          </span>
+                        )}
+                        <h3 className="font-display text-base font-semibold text-black leading-snug group-hover:text-red-brand transition-colors">
                           {item.title}
                         </h3>
                         {item.date && (
-                          <p className="text-gray-mid text-xs mt-2">
+                          <p className="text-gray-mid text-[11px] mt-1.5">
                             {formatDate(item.date)}
                           </p>
                         )}
@@ -396,9 +391,9 @@ export default async function AreasLandingPage({
                       <Link
                         key={item.id}
                         href={`/media`}
-                        className="group block break-inside-avoid"
+                        className="group block break-inside-avoid mb-6"
                       >
-                        <div className="relative aspect-video overflow-hidden mb-4 bg-black">
+                        <div className="relative aspect-video overflow-hidden mb-3 bg-black">
                           {item.embed_url ? (
                             <Image
                               src={`https://img.youtube.com/vi/${extractYouTubeId(item.embed_url)}/hqdefault.jpg`}
@@ -411,19 +406,19 @@ export default async function AreasLandingPage({
                             <div className="absolute inset-0 bg-[#1a1a1a]" />
                           )}
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-12 h-12 rounded-full bg-white/80 flex items-center justify-center group-hover:bg-[#fee198] transition-colors">
-                              <Play size={18} className="text-black ml-0.5 fill-black" />
+                            <div className="w-10 h-10 rounded-full bg-white/80 flex items-center justify-center group-hover:bg-[#fee198] transition-colors">
+                              <Play size={14} className="text-black ml-0.5 fill-black" />
                             </div>
                           </div>
                         </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-eyebrow text-[#c1121f]">
+                        <span className="text-[9px] font-semibold uppercase tracking-eyebrow text-[#c1121f]">
                           Video
                         </span>
-                        <h3 className="font-display text-lg font-semibold text-black leading-snug mt-1 group-hover:text-red-brand transition-colors">
+                        <h3 className="font-display text-base font-semibold text-black leading-snug mt-1 group-hover:text-red-brand transition-colors">
                           {item.title}
                         </h3>
                         {item.date && (
-                          <p className="text-gray-mid text-xs mt-2">
+                          <p className="text-gray-mid text-[11px] mt-1.5">
                             {formatDate(item.date)}
                           </p>
                         )}
