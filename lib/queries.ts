@@ -21,6 +21,8 @@ import type {
   City,
   Story,
   NeighborhoodWithArea,
+  ContentIndex,
+  MediaItem,
 } from "./types";
 
 function sb() {
@@ -36,7 +38,8 @@ export async function getAreas(): Promise<Area[]> {
     .from("areas")
     .select("*")
     .eq("is_active", true)
-    .order("sort_order");
+    .order("sort_order")
+    .order("name");
   if (error) throw error;
   return data ?? [];
 }
@@ -568,4 +571,136 @@ export async function getNeighborhoodIdsForArea(
     .returns<{ id: string }[]>();
   if (error) throw error;
   return (data ?? []).map((n) => n.id);
+}
+
+/* ============================================================
+   HELPER: Get neighborhoods ranked by content popularity
+   Used for sidebar "Featured Neighborhoods" widgets.
+   Ranking: story count desc → business count desc → name asc
+   ============================================================ */
+
+export async function getNeighborhoodsByPopularity(opts?: {
+  limit?: number;
+}): Promise<Neighborhood[]> {
+  const limit = opts?.limit ?? 8;
+
+  /* Fetch all active neighborhoods */
+  const { data: neighborhoods, error: nErr } = await sb()
+    .from("neighborhoods")
+    .select("*")
+    .eq("is_active", true)
+    .returns<Neighborhood[]>();
+  if (nErr) throw nErr;
+  if (!neighborhoods?.length) return [];
+
+  /* Count published blog_posts per neighborhood_id */
+  const { data: postCounts, error: pcErr } = await sb()
+    .from("blog_posts")
+    .select("neighborhood_id")
+    .eq("status", "published")
+    .not("neighborhood_id", "is", null)
+    .returns<{ neighborhood_id: string }[]>();
+
+  /* Count active business_listings per neighborhood_id */
+  const { data: bizCounts, error: bcErr } = await sb()
+    .from("business_listings")
+    .select("neighborhood_id")
+    .eq("status", "active")
+    .not("neighborhood_id", "is", null)
+    .returns<{ neighborhood_id: string }[]>();
+
+  /* Build count maps */
+  const storyMap = new Map<string, number>();
+  if (!pcErr && postCounts) {
+    for (const row of postCounts) {
+      storyMap.set(row.neighborhood_id, (storyMap.get(row.neighborhood_id) ?? 0) + 1);
+    }
+  }
+
+  const bizMap = new Map<string, number>();
+  if (!bcErr && bizCounts) {
+    for (const row of bizCounts) {
+      bizMap.set(row.neighborhood_id, (bizMap.get(row.neighborhood_id) ?? 0) + 1);
+    }
+  }
+
+  /* Sort: story count desc → business count desc → name asc */
+  const sorted = [...neighborhoods].sort((a, b) => {
+    const aStories = storyMap.get(a.id) ?? 0;
+    const bStories = storyMap.get(b.id) ?? 0;
+    if (bStories !== aStories) return bStories - aStories;
+
+    const aBiz = bizMap.get(a.id) ?? 0;
+    const bBiz = bizMap.get(b.id) ?? 0;
+    if (bBiz !== aBiz) return bBiz - aBiz;
+
+    return a.name.localeCompare(b.name);
+  });
+
+  return sorted.slice(0, limit);
+}
+
+/* ============================================================
+   CONTENT INDEX
+   ============================================================ */
+
+export async function getContentIndexByToken(
+  tokenName: string,
+  opts?: { targetType?: string; activeUrl?: string }
+): Promise<ContentIndex | null> {
+  let q = sb()
+    .from("content_index")
+    .select("*")
+    .eq("token_name", tokenName)
+    .eq("is_active", true);
+
+  if (opts?.targetType) q = q.eq("target_type", opts.targetType);
+  if (opts?.activeUrl) q = q.eq("active_url", opts.activeUrl);
+
+  const { data, error } = await q.single();
+  if (error && error.code !== "PGRST116") throw error;
+  return data as ContentIndex | null;
+}
+
+/* ============================================================
+   MEDIA ITEMS
+   ============================================================ */
+
+export async function getMediaItems(opts?: {
+  limit?: number;
+  featured?: boolean;
+  targetType?: string;
+  targetIds?: string[];
+}): Promise<MediaItem[]> {
+  let q = sb()
+    .from("media_items")
+    .select("*")
+    .eq("status", "published")
+    .eq("is_active", true)
+    .order("is_featured", { ascending: false })
+    .order("published_at", { ascending: false, nullsFirst: false });
+
+  if (opts?.featured) q = q.eq("is_featured", true);
+  if (opts?.limit) q = q.limit(opts.limit);
+
+  const { data, error } = await q;
+  if (error) throw error;
+
+  let items = (data ?? []) as MediaItem[];
+
+  /* If targeting specific area links, filter via media_item_links */
+  if (opts?.targetType && opts?.targetIds?.length) {
+    const { data: links, error: linkErr } = await sb()
+      .from("media_item_links")
+      .select("media_item_id")
+      .eq("target_type", opts.targetType)
+      .in("target_id", opts.targetIds)
+      .returns<{ media_item_id: string }[]>();
+    if (!linkErr && links?.length) {
+      const linkedIds = new Set(links.map((l) => l.media_item_id));
+      items = items.filter((m) => linkedIds.has(m.id));
+    }
+  }
+
+  return items;
 }
