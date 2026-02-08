@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, ChevronRight, Play } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import {
@@ -272,7 +272,21 @@ export default async function NeighborhoodsLandingPage({
         </div>
       </section>
 
-      {/* ========== 2. SEARCH BAR ========== */}
+      {/* ========== 2. BREADCRUMBS ========== */}
+      <div className="site-container pt-4 pb-2">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-1.5 text-xs text-gray-mid"
+        >
+          <Link href="/" className="hover:text-black transition-colors">
+            Home
+          </Link>
+          <ChevronRight size={12} />
+          <span className="text-black font-medium">Neighborhoods</span>
+        </nav>
+      </div>
+
+      {/* ========== 3. SEARCH BAR ========== */}
       <div className="site-container pt-10 pb-4">
         <SearchBar
           placeholder="Search neighborhoods…"
