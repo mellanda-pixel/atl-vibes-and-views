@@ -1,10 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { MapPin, Calendar, ArrowRight, ChevronRight } from "lucide-react";
+import { MapPin, Calendar, ArrowRight, ChevronRight, Play } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
+import { NewsletterForm } from "@/components/NewsletterForm";
 import {
   Sidebar,
+  SidebarWidget,
+  WidgetTitle,
   NewsletterWidget,
   AdPlacement,
   NeighborhoodsWidget,
@@ -18,6 +21,7 @@ import {
   getBusinesses,
   getEvents,
   getCategoryBySlug,
+  getMediaItems,
 } from "@/lib/queries";
 
 /* ============================================================
@@ -26,21 +30,26 @@ import {
    MIRRORS: Area Detail Page (app/areas/[slug]/page.tsx)
    Same intent (deep dive), same structure, scoped to neighborhood.
 
-   LOCKED SECTION ORDER (main column):
-   1. Hero (neighborhood record)
-   2. Breadcrumbs (Home → Areas → [Area] → [Neighborhood])
-   3. Search Bar (scoped to this neighborhood)
-   4. Stories (blog posts)
-   5. Horizontal Ad
-   6. Eats & Drinks (6 items — area detail = 3)
-   7. Events (6 items — area detail = 5)
+   LAYOUT:
 
-   SIDEBAR:
-   1. NewsletterWidget (scoped)
-   2. AdPlacement
-   3. Nearby Neighborhoods (same area, exclude current)
-   4. SubmitCTA (scoped)
-   5. SubmitEventCTA
+   GRID A (main + Sidebar 1):
+   1. Hero
+   2. Breadcrumbs
+   3. Search Bar
+   4. Stories
+   5. Eats & Drinks (6 items)
+   6. Events (6 items)
+   7. Horizontal Ad
+   + Sidebar 1: NewsletterWidget, AdPlacement, Nearby Neighborhoods
+
+   FULL-WIDTH PAGE BREAK:
+   8. Video Scroller (black bg, 3 videos, #fee198 controls)
+      Fallback: neighborhood → area → citywide
+
+   GRID B (newsletter + Sidebar 2):
+   9. Newsletter CTA
+   + Sidebar 2: SubmitCTA, Featured in the Hub, SubmitEventCTA
+     (if no businesses → ad fallback)
 
    3-TIER FALLBACK CHAIN:
    Tier 1: This neighborhood        → label = neighborhood.name
@@ -53,6 +62,7 @@ import {
 const PH_HERO = "https://placehold.co/1920x600/1a1a1a/e6c46d?text=Neighborhood";
 const PH_POST = "https://placehold.co/600x400/1a1a1a/e6c46d?text=Story";
 const PH_BIZ = "https://placehold.co/600x400/c1121f/fee198?text=Business";
+const PH_VIDEO = "https://placehold.co/960x540/222222/e6c46d?text=Video";
 
 function formatDate(dateStr?: string | null): string {
   if (!dateStr) return "";
@@ -78,6 +88,13 @@ function pickHeadline(slug: string, options: string[]): string {
     hash = ((hash << 5) - hash + slug.charCodeAt(i)) | 0;
   }
   return options[Math.abs(hash) % options.length];
+}
+
+function extractYouTubeId(url: string): string {
+  const match = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([a-zA-Z0-9_-]{11})/
+  );
+  return match?.[1] ?? "";
 }
 
 const EATS_HEADLINES = [
@@ -153,14 +170,12 @@ export default async function NeighborhoodDetailPage({
   let storiesLabel = neighborhood.name;
 
   if (posts.length === 0 && !search && neighborIds.length > 0) {
-    /* Tier 2: same-area neighbors */
     posts = await getBlogPosts({ neighborhoodIds: neighborIds, limit: 4 }).catch(
       () => []
     );
     if (posts.length > 0) storiesLabel = areaName;
   }
   if (posts.length === 0 && !search) {
-    /* Tier 3: citywide */
     posts = await getBlogPosts({ limit: 3 }).catch(() => []);
     if (posts.length > 0) storiesLabel = "Atlanta";
   }
@@ -216,11 +231,70 @@ export default async function NeighborhoodDetailPage({
   const eatsHeadline = `${pickHeadline(slug, EATS_HEADLINES)} ${eatsLabel}`;
   const eventsHeadline = `${pickHeadline(slug, EVENTS_HEADLINES)} ${eventsLabel}`;
 
-  /* ── Sidebar: nearby neighborhoods (same area, exclude current) ── */
+  /* ── Sidebar 1: nearby neighborhoods (same area, exclude current) ── */
   const nearbyNeighborhoods = sameAreaNeighborhoods
     .filter((n) => n.slug !== slug)
     .slice(0, 8)
     .map((n) => ({ name: n.name, slug: n.slug }));
+
+  /* ── Video Scroller: neighborhood → area → citywide fallback (3 videos) ── */
+  let scrollerVideos = await getMediaItems({
+    limit: 3,
+    targetType: "neighborhood",
+    targetIds: [neighborhood.id],
+  }).catch(() => []);
+  if (scrollerVideos.length === 0 && area) {
+    scrollerVideos = await getMediaItems({
+      limit: 3,
+      targetType: "area",
+      targetIds: [area.id],
+    }).catch(() => []);
+  }
+  if (scrollerVideos.length === 0) {
+    scrollerVideos = await getMediaItems({ limit: 3 }).catch(() => []);
+  }
+  const featuredVideo = scrollerVideos[0] ?? null;
+  const playlistVideos = scrollerVideos.slice(1);
+
+  /* ── Sidebar 2: Featured in the Hub (1 business, exclude dining + events) ── */
+  const eventsCat = await getCategoryBySlug("events").catch(() => null);
+  const excludeCatIds = new Set(
+    [diningCat?.id, eventsCat?.id].filter(Boolean) as string[]
+  );
+
+  /* Try neighborhood-scoped first, then area, then citywide */
+  let featuredBizRaw = await getBusinesses({
+    featured: true,
+    neighborhoodIds: [neighborhood.id],
+    limit: 5,
+  }).catch(() => []);
+  if (featuredBizRaw.length === 0 && neighborIds.length > 0) {
+    featuredBizRaw = await getBusinesses({
+      featured: true,
+      neighborhoodIds: neighborIds,
+      limit: 5,
+    }).catch(() => []);
+  }
+  if (featuredBizRaw.length === 0) {
+    featuredBizRaw = await getBusinesses({ featured: true, limit: 5 }).catch(
+      () => []
+    );
+  }
+  const featuredBiz = featuredBizRaw.find(
+    (b) => !b.category_id || !excludeCatIds.has(b.category_id)
+  );
+
+  /* ── Sidebar 2: Featured Businesses list (neighborhood-scoped, limit 6) ── */
+  let sidebarBusinesses = await getBusinesses({
+    neighborhoodIds: [neighborhood.id],
+    limit: 6,
+  }).catch(() => []);
+  /* Exclude the Featured in the Hub biz to avoid duplication */
+  if (featuredBiz) {
+    sidebarBusinesses = sidebarBusinesses.filter((b) => b.id !== featuredBiz.id);
+  }
+
+  const hasSidebarBusinesses = featuredBiz || sidebarBusinesses.length > 0;
 
   return (
     <>
@@ -295,12 +369,12 @@ export default async function NeighborhoodDetailPage({
       {/* ========== 3. SEARCH BAR ========== */}
       <div className="site-container pb-6">
         <SearchBar
-          placeholder={`Search in ${neighborhood.name}…`}
+          placeholder={`Search in ${neighborhood.name}\u2026`}
           className="mx-auto"
         />
       </div>
 
-      {/* ========== 4–7: MAIN + SIDEBAR GRID ========== */}
+      {/* ========== GRID A: MAIN + SIDEBAR 1 ========== */}
       <div className="site-container pb-16 md:pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-12 lg:gap-16">
           {/* ---------- MAIN COLUMN ---------- */}
@@ -363,23 +437,6 @@ export default async function NeighborhoodDetailPage({
                   No stories in {storiesLabel} yet. Check back soon.
                 </p>
               )}
-            </section>
-
-            {/* ===== HORIZONTAL AD ===== */}
-            <section>
-              <Link
-                href="/hub/businesses"
-                className="block bg-gray-100 flex items-center justify-center py-12 border border-dashed border-gray-300 hover:border-[#e6c46d] hover:bg-gray-50 transition-colors group"
-              >
-                <div className="text-center">
-                  <span className="text-xs text-gray-mid uppercase tracking-eyebrow group-hover:text-black transition-colors">
-                    Advertise Here
-                  </span>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Reach thousands of Atlanta locals
-                  </p>
-                </div>
-              </Link>
             </section>
 
             {/* ===== EATS & DRINKS (6 items) ===== */}
@@ -504,6 +561,23 @@ export default async function NeighborhoodDetailPage({
               )}
             </section>
 
+            {/* ===== HORIZONTAL AD ===== */}
+            <section>
+              <Link
+                href="/hub/businesses"
+                className="block bg-gray-100 flex items-center justify-center py-12 border border-dashed border-gray-300 hover:border-[#e6c46d] hover:bg-gray-50 transition-colors group"
+              >
+                <div className="text-center">
+                  <span className="text-xs text-gray-mid uppercase tracking-eyebrow group-hover:text-black transition-colors">
+                    Advertise Here
+                  </span>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Reach thousands of Atlanta locals
+                  </p>
+                </div>
+              </Link>
+            </section>
+
             {/* ===== NO RESULTS (search mode only) ===== */}
             {search &&
               stories.length === 0 &&
@@ -518,7 +592,7 @@ export default async function NeighborhoodDetailPage({
               )}
           </div>
 
-          {/* ---------- SIDEBAR (LOCKED ORDER) ---------- */}
+          {/* ---------- SIDEBAR 1 (UNCHANGED) ---------- */}
           <aside className="hidden lg:block">
             <Sidebar>
               <NewsletterWidget
@@ -530,10 +604,306 @@ export default async function NeighborhoodDetailPage({
                 title={`Nearby in ${areaName}`}
                 neighborhoods={nearbyNeighborhoods}
               />
+            </Sidebar>
+          </aside>
+        </div>
+      </div>
+
+      {/* ========== VIDEO SCROLLER — FULL-WIDTH BLACK PAGE BREAK ========== */}
+      <section className="w-full bg-black py-16 md:py-24">
+        <div className="site-container">
+          {/* Section header */}
+          <div className="flex items-end justify-between mb-10 border-b border-white/10 pb-4">
+            <div>
+              <span className="text-white text-[11px] font-semibold uppercase tracking-eyebrow">
+                Watch &amp; Listen
+              </span>
+              <h2 className="font-display text-3xl md:text-4xl font-semibold text-white leading-tight mt-1">
+                Recent Video
+              </h2>
+            </div>
+            <Link
+              href="/media"
+              className="flex items-center gap-1 text-xs font-semibold uppercase tracking-eyebrow text-white/60 hover:text-[#fee198] transition-colors shrink-0 pb-1"
+            >
+              See All <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          {scrollerVideos.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-10">
+              {/* LEFT — Featured Video (~70%) */}
+              {featuredVideo && (
+                <div>
+                  <Link href="/media" className="group block">
+                    <div className="relative aspect-video bg-[#111] overflow-hidden">
+                      {featuredVideo.embed_url ? (
+                        <Image
+                          src={`https://img.youtube.com/vi/${extractYouTubeId(featuredVideo.embed_url)}/hqdefault.jpg`}
+                          alt={featuredVideo.title}
+                          fill
+                          unoptimized
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <Image
+                          src={PH_VIDEO}
+                          alt={featuredVideo.title}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#fee198]/90 flex items-center justify-center group-hover:bg-[#fee198] transition-colors">
+                          <Play size={24} className="text-black ml-1 fill-black" />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="mt-5">
+                    <span className="text-[#fee198] text-[10px] font-semibold uppercase tracking-eyebrow">
+                      Video
+                    </span>
+                    <h3 className="font-display text-xl md:text-2xl font-semibold text-white mt-3 leading-snug">
+                      {featuredVideo.title}
+                    </h3>
+                    {featuredVideo.published_at && (
+                      <p className="text-white/40 text-xs mt-3">
+                        {formatDate(featuredVideo.published_at)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* RIGHT — Video Playlist (~30%) */}
+              {playlistVideos.length > 0 && (
+                <div>
+                  <Link
+                    href="/media"
+                    className="text-xs font-semibold uppercase tracking-eyebrow text-white/60 hover:text-[#fee198] transition-colors mb-6 block"
+                  >
+                    More Videos &rarr;
+                  </Link>
+                  <div className="space-y-5">
+                    {playlistVideos.map((vid) => (
+                      <Link
+                        key={vid.id}
+                        href="/media"
+                        className="flex gap-4 group cursor-pointer"
+                      >
+                        <div className="relative w-28 h-20 shrink-0 bg-[#222] overflow-hidden">
+                          {vid.embed_url ? (
+                            <Image
+                              src={`https://img.youtube.com/vi/${extractYouTubeId(vid.embed_url)}/hqdefault.jpg`}
+                              alt={vid.title}
+                              fill
+                              unoptimized
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <Image
+                              src={PH_VIDEO}
+                              alt={vid.title}
+                              fill
+                              unoptimized
+                              className="object-cover"
+                            />
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-7 h-7 rounded-full bg-[#fee198]/80 flex items-center justify-center">
+                              <Play size={10} className="text-black ml-0.5 fill-black" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[10px] font-semibold uppercase tracking-eyebrow text-[#fee198]">
+                            Video
+                          </span>
+                          <h4 className="text-white text-sm font-semibold leading-snug mt-1 line-clamp-2 group-hover:text-[#fee198] transition-colors">
+                            {vid.title}
+                          </h4>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Placeholder when no videos exist */
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-10">
+              <div>
+                <div className="relative aspect-video bg-[#111] overflow-hidden">
+                  <Image
+                    src={PH_VIDEO}
+                    alt="Video coming soon"
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#fee198]/90 flex items-center justify-center">
+                      <Play size={24} className="text-black ml-1 fill-black" />
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-5">
+                  <span className="text-[#fee198] text-[10px] font-semibold uppercase tracking-eyebrow">
+                    Video
+                  </span>
+                  <h3 className="font-display text-xl md:text-2xl font-semibold text-white mt-3 leading-snug">
+                    Video Content Coming Soon
+                  </h3>
+                  <p className="text-white/40 text-xs mt-3 uppercase tracking-wide">
+                    ATL Vibes &amp; Views
+                  </p>
+                </div>
+              </div>
+              <div>
+                <Link
+                  href="/media"
+                  className="text-xs font-semibold uppercase tracking-eyebrow text-white/60 hover:text-[#fee198] transition-colors mb-6 block"
+                >
+                  More Videos &rarr;
+                </Link>
+                <p className="text-white/30 text-sm">
+                  More videos coming soon.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ========== GRID B: NEWSLETTER + SIDEBAR 2 ========== */}
+      <div className="site-container py-16 md:py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-12 lg:gap-16">
+          {/* ---------- MAIN: Newsletter CTA ---------- */}
+          <div>
+            <section className="bg-[#f8f5f0] py-12 px-8 md:px-16 text-center">
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-black mb-2 italic">
+                Stay Connected to {neighborhood.name}
+              </h2>
+              <p className="text-gray-mid text-sm mb-8">
+                Get the latest on {neighborhood.name}&rsquo;s culture, businesses, and events.
+              </p>
+              <NewsletterForm />
+              <p className="text-gray-mid/60 text-xs mt-4">
+                No spam. Unsubscribe anytime.
+              </p>
+            </section>
+          </div>
+
+          {/* ---------- SIDEBAR 2 ---------- */}
+          <aside className="hidden lg:block">
+            <Sidebar>
+              {/* 1. SubmitCTA */}
               <SubmitCTA
                 heading={`Own a Business in ${neighborhood.name}?`}
                 description="Get your business in front of thousands of Atlantans."
               />
+
+              {/* 2. Featured in the Hub / Ad fallback */}
+              {hasSidebarBusinesses ? (
+                <>
+                  {featuredBiz && (
+                    <SidebarWidget>
+                      <WidgetTitle className="text-[#c1121f]">
+                        Featured in the Hub
+                      </WidgetTitle>
+                      <Link
+                        href={`/places/${featuredBiz.slug}`}
+                        className="group flex gap-4 items-start"
+                      >
+                        <div className="relative w-24 h-20 shrink-0 overflow-hidden bg-gray-100">
+                          <Image
+                            src={
+                              featuredBiz.logo ||
+                              "https://placehold.co/200x160/1a1a1a/e6c46d?text=Biz"
+                            }
+                            alt={featuredBiz.business_name}
+                            fill
+                            unoptimized
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          {featuredBiz.video_url && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-7 h-7 rounded-full bg-white/80 flex items-center justify-center group-hover:bg-[#fee198] transition-colors">
+                                <Play size={10} className="text-black ml-0.5 fill-black" />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-display text-sm font-semibold text-black group-hover:text-red-brand transition-colors leading-tight">
+                            {featuredBiz.business_name}
+                          </h4>
+                          {featuredBiz.categories?.name && (
+                            <span className="inline-block mt-1 px-2 py-0.5 bg-gold-light text-black text-[9px] font-semibold uppercase tracking-eyebrow rounded-full">
+                              {featuredBiz.categories.name}
+                            </span>
+                          )}
+                          {featuredBiz.neighborhoods?.name && (
+                            <p className="text-[11px] text-gray-mid mt-1">
+                              {featuredBiz.neighborhoods.name}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    </SidebarWidget>
+                  )}
+
+                  {/* Featured Businesses list */}
+                  {sidebarBusinesses.length > 0 && (
+                    <SidebarWidget>
+                      <WidgetTitle>Businesses Nearby</WidgetTitle>
+                      <div className="space-y-3">
+                        {sidebarBusinesses.slice(0, 6).map((biz) => (
+                          <Link
+                            key={biz.id}
+                            href={`/places/${biz.slug}`}
+                            className="group flex items-center gap-3 py-1"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-semibold text-black group-hover:text-red-brand transition-colors truncate">
+                                {biz.business_name}
+                              </h4>
+                              {biz.categories?.name && (
+                                <span className="text-[10px] text-gray-mid uppercase tracking-eyebrow">
+                                  {biz.categories.name}
+                                </span>
+                              )}
+                            </div>
+                            <ArrowRight
+                              size={12}
+                              className="shrink-0 text-gray-mid group-hover:text-red-brand transition-colors"
+                            />
+                          </Link>
+                        ))}
+                      </div>
+                    </SidebarWidget>
+                  )}
+                </>
+              ) : (
+                /* Ad fallback when no businesses */
+                <Link
+                  href="/partner"
+                  className="block bg-gray-100 border border-dashed border-gray-300 hover:border-[#e6c46d] hover:bg-gray-50 transition-colors group min-h-[600px] flex items-center justify-center"
+                >
+                  <div className="text-center px-6">
+                    <span className="text-xs text-gray-mid uppercase tracking-eyebrow group-hover:text-black transition-colors">
+                      Advertise Here
+                    </span>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Reach thousands of Atlanta locals
+                    </p>
+                  </div>
+                </Link>
+              )}
+
+              {/* 3. SubmitEventCTA */}
               <SubmitEventCTA />
             </Sidebar>
           </aside>
