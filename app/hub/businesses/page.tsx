@@ -47,34 +47,40 @@ export default async function BusinessHubPage({
   ]);
 
   /* Categories that apply to businesses */
+  type LookupRow = { id: string; name: string; slug: string };
+
   const supabase = createServerClient();
   const { data: categories } = await supabase
     .from("categories")
     .select("id, name, slug")
     .contains("applies_to", ["business"])
     .eq("is_active", true)
-    .order("name");
+    .order("name")
+    .returns<LookupRow[]>();
 
   /* Tags for tag pills */
   const { data: tags } = await supabase
     .from("tags")
     .select("id, name, slug")
     .eq("is_active", true)
-    .order("name");
+    .order("name")
+    .returns<LookupRow[]>();
 
   /* Amenities for filter dropdown */
   const { data: amenities } = await supabase
     .from("amenities")
     .select("id, name, slug")
     .eq("is_active", true)
-    .order("name");
+    .order("name")
+    .returns<LookupRow[]>();
 
   /* Identity options for filter dropdown */
   const { data: identityOptions } = await supabase
     .from("business_identity_options")
     .select("id, name, slug")
     .eq("is_active", true)
-    .order("name");
+    .order("name")
+    .returns<LookupRow[]>();
 
   /* ---------- Resolve area → neighborhood IDs ---------- */
   let neighborhoodFilter: string[] | undefined;
