@@ -7,7 +7,7 @@ import {
   getNeighborhoodIdsForArea,
   getNeighborhoodsByPopularity,
 } from "@/lib/queries";
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/supabase";
 import {
   SubmitCTA,
   SidebarWidget,
@@ -47,7 +47,7 @@ export default async function BusinessHubPage({
   ]);
 
   /* Categories that apply to businesses */
-  const supabase = await createClient();
+  const supabase = createServerClient();
   const { data: categories } = await supabase
     .from("categories")
     .select("id, name, slug")
