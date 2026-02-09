@@ -15,6 +15,7 @@ import {
 import { BusinessCard } from "@/components/ui/BusinessCard";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { NewsletterBlock } from "@/components/ui/NewsletterBlock";
+import { AdBlock } from "@/components/ui/AdBlock";
 
 /* ============================================================
    TYPES
@@ -539,13 +540,7 @@ export function HubArchiveClient({
       </section>
 
       {/* ========== 8. HORIZONTAL AD ========== */}
-      <div className="max-w-[1280px] mx-auto px-6">
-        <div className="w-full h-[120px] bg-gray-light border border-dashed border-gray-mid flex items-center justify-center">
-          <span className="text-[11px] text-gray-mid uppercase tracking-widest">
-            Ad — Horizontal
-          </span>
-        </div>
-      </div>
+      <AdBlock variant="horizontal" />
 
       {/* ========== 9. NEWSLETTER (FINAL) ========== */}
       <NewsletterBlock

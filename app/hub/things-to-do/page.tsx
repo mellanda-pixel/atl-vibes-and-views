@@ -1,6 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { HeroSection } from "@/components/ui/HeroSection";
+import { AdBlock } from "@/components/ui/AdBlock";
 import {
   getAreas,
   getNeighborhoods,
@@ -328,62 +329,12 @@ export default async function ThingsToDoHubPage({
     <>
 
       {/* ========== 1. HERO ========== */}
-      {/* Desktop hero */}
-      <section className="hidden lg:block bg-black">
-        <div className="grid grid-cols-2 min-h-[480px]">
-          <div className="relative overflow-hidden bg-[#111]">
-            <Image
-              src={PH_HERO}
-              alt="Things To Do in Atlanta"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
-          <div className="flex flex-col justify-center px-16">
-            <span className="text-[#e6c46d] text-[11px] font-semibold uppercase tracking-[0.15em] mb-4">
-              The Hub
-            </span>
-            <h1 className="font-display text-[56px] font-semibold text-white leading-[1.05]">
-              Things To Do in Atlanta
-            </h1>
-            <p className="text-white/60 text-[15px] mt-4 max-w-[420px] leading-relaxed">
-              Museums, parks, landmarks, markets, and local favorites —
-              discover the best of what Atlanta has to offer.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Mobile hero */}
-      <section className="lg:hidden bg-black">
-        <div className="relative w-full" style={{ aspectRatio: "16/10" }}>
-          <Image
-            src={PH_HERO}
-            alt="Things To Do in Atlanta"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div
-            className="absolute bottom-0 left-0 right-0 p-6"
-            style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
-          >
-            <span className="text-[#e6c46d] text-[10px] font-semibold uppercase tracking-[0.15em]">
-              The Hub
-            </span>
-            <h1 className="font-display text-3xl font-semibold text-white leading-[1.1] mt-1">
-              Things To Do in Atlanta
-            </h1>
-          </div>
-        </div>
-        <div className="px-4 py-5 bg-black">
-          <p className="text-white/60 text-[13px]">
-            Museums, parks, landmarks, markets, and local favorites —
-            discover the best of what Atlanta has to offer.
-          </p>
-        </div>
-      </section>
+      <HeroSection
+        backgroundImage={PH_HERO}
+        eyebrow="The Hub"
+        title="Things To Do in Atlanta"
+        description="Museums, parks, landmarks, markets, and local favorites — discover the best of what Atlanta has to offer."
+      />
 
       {/* ========== 2. BREADCRUMBS ========== */}
       <div className="site-container pt-6 pb-2">
@@ -474,11 +425,7 @@ export default async function ThingsToDoHubPage({
             </div>
 
             {/* Ad Slot */}
-            <div className="w-full h-[250px] bg-gray-light border border-dashed border-gray-mid flex items-center justify-center mb-6">
-              <span className="text-[11px] text-gray-mid uppercase tracking-widest">
-                Ad — Sidebar
-              </span>
-            </div>
+            <AdBlock variant="sidebar" />
           </div>
         </aside>
       </HubArchiveClient>
