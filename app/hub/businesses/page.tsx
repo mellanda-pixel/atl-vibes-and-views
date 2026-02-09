@@ -262,7 +262,7 @@ export default async function BusinessHubPage({
   }));
 
   /* ---------- Sidebar neighborhoods ---------- */
-  const topNeighborhoods = await getNeighborhoodsByPopularity(8);
+  const topNeighborhoods = await getNeighborhoodsByPopularity({ limit: 8 });
 
   /* ---------- Current filters for client ---------- */
   const currentFilters = {
