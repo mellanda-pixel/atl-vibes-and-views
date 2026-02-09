@@ -479,7 +479,7 @@ export function BusinessesClient({
         <div className={`${showMap ? "block" : "hidden"} lg:block`}>
           <div className="relative w-full h-[280px] lg:h-[400px] bg-gray-200 overflow-hidden">
             <Image
-              src="https://placehold.co/1280x400/e8e8e8/999?text=Map+Placeholder"
+              src="/images/map.png"
               alt="Atlanta Business Map — placeholder"
               fill
               className="object-cover"
