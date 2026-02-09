@@ -32,3 +32,5 @@ export {
 export { SectionHeader } from "./ui/SectionHeader";
 export { NewsletterBlock } from "./ui/NewsletterBlock";
 export { Breadcrumbs } from "./ui/Breadcrumbs";
+export { HeroSection } from "./ui/HeroSection";
+export { AdBlock } from "./ui/AdBlock";

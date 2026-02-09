@@ -5,6 +5,8 @@ import { MapPin } from "lucide-react";
 import { EventCard } from "@/components/ui/EventCard";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { HeroSection } from "@/components/ui/HeroSection";
+import { AdBlock } from "@/components/ui/AdBlock";
 import { SearchBar } from "@/components/SearchBar";
 import {
   Sidebar,
@@ -178,32 +180,13 @@ export default async function AreaDetailPage({
   return (
     <>
       {/* ========== 1. HERO ========== */}
-      <section className="relative w-full">
-        <div className="relative w-full h-[52vh] sm:h-[58vh] md:h-[65vh] min-h-[340px] max-h-[640px] overflow-hidden">
-          <Image
-            src={area.hero_image_url || PH_HERO}
-            alt={area.name}
-            fill
-            unoptimized
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-        </div>
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-          <span className="text-[#e6c46d] text-[11px] font-semibold uppercase tracking-[0.15em] mb-3">
-            Explore Atlanta
-          </span>
-          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold text-white">
-            {area.name}
-          </h1>
-          {area.tagline && (
-            <p className="text-white/70 text-sm md:text-base mt-3 max-w-xl">
-              {area.tagline}
-            </p>
-          )}
-        </div>
-      </section>
+      <HeroSection
+        variant="overlay"
+        backgroundImage={area.hero_image_url || PH_HERO}
+        eyebrow="Explore Atlanta"
+        title={area.name}
+        description={area.tagline}
+      />
 
       {/* ========== 2. BREADCRUMBS ========== */}
       <div className="site-container pt-6 pb-2">
@@ -286,19 +269,7 @@ export default async function AreaDetailPage({
 
             {/* ===== AD SPACE — horizontal (matches homepage) ===== */}
             <section>
-              <Link
-                href="/hub/businesses"
-                className="block bg-gray-100 flex items-center justify-center py-12 border border-dashed border-gray-300 hover:border-[#e6c46d] hover:bg-gray-50 transition-colors group"
-              >
-                <div className="text-center">
-                  <span className="text-xs text-gray-mid uppercase tracking-eyebrow group-hover:text-black transition-colors">
-                    Advertise Here
-                  </span>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Reach thousands of Atlanta locals
-                  </p>
-                </div>
-              </Link>
+              <AdBlock variant="inline" />
             </section>
 
             {/* ===== EATS & DRINKS ===== */}
