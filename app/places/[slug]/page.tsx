@@ -31,7 +31,7 @@ function sb() {
   return createServerClient();
 }
 
-async function getBusinessBySlug(slug: string) {
+async function getBusinessBySlug(slug: string): Promise<any> {
   const { data, error } = await sb()
     .from("business_listings")
     .select(
@@ -51,7 +51,7 @@ async function getBusinessBySlug(slug: string) {
   return data;
 }
 
-async function getBusinessImages(businessId: string) {
+async function getBusinessImages(businessId: string): Promise<any[]> {
   const { data } = await sb()
     .from("business_images")
     .select("*")
@@ -60,7 +60,7 @@ async function getBusinessImages(businessId: string) {
   return data ?? [];
 }
 
-async function getBusinessHours(businessId: string) {
+async function getBusinessHours(businessId: string): Promise<any[]> {
   const { data } = await sb()
     .from("business_hours")
     .select("*")
@@ -68,7 +68,7 @@ async function getBusinessHours(businessId: string) {
   return data ?? [];
 }
 
-async function getBusinessAmenities(businessId: string) {
+async function getBusinessAmenities(businessId: string): Promise<any[]> {
   const { data } = await sb()
     .from("business_amenities")
     .select("*, amenities ( id, name )")
@@ -76,7 +76,7 @@ async function getBusinessAmenities(businessId: string) {
   return data ?? [];
 }
 
-async function getBusinessTags(businessId: string) {
+async function getBusinessTags(businessId: string): Promise<any[]> {
   const { data } = await sb()
     .from("business_tags")
     .select("*, tags ( id, name )")
@@ -84,7 +84,7 @@ async function getBusinessTags(businessId: string) {
   return data ?? [];
 }
 
-async function getBusinessIdentities(businessId: string) {
+async function getBusinessIdentities(businessId: string): Promise<any[]> {
   const { data } = await sb()
     .from("business_identities")
     .select("*, business_identity_options ( id, name )")
@@ -92,7 +92,7 @@ async function getBusinessIdentities(businessId: string) {
   return data ?? [];
 }
 
-async function getApprovedReviews(businessId: string) {
+async function getApprovedReviews(businessId: string): Promise<any[]> {
   const { data } = await sb()
     .from("reviews")
     .select("*")
