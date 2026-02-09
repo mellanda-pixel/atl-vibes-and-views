@@ -25,7 +25,7 @@ const HUB_CONFIG: HubArchiveConfig = {
   ctaTitle: "Get Your Business Featured",
   ctaDescription: "Reach thousands of Atlantans with a Premium placement in our directory.",
   mapToggleLabel: "Business Map",
-  mapImage: "https://placehold.co/1280x400/e8e8e8/999?text=Map+Placeholder",
+  mapImage: "/images/map.png",
   mapAlt: "Atlanta Business Map — placeholder",
   gridEyebrow: "Businesses",
   gridCountNoun: ["business", "businesses"],

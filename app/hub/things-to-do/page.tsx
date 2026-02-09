@@ -26,7 +26,7 @@ const HUB_CONFIG: HubArchiveConfig = {
   ctaDescription:
     "Reach thousands of Atlantans with Premium placement in our things-to-do guide.",
   mapToggleLabel: "Activity Map",
-  mapImage: "https://placehold.co/1280x400/e8e8e8/999?text=Map+Placeholder",
+  mapImage: "/images/map.png",
   mapAlt: "Atlanta Activity Map — placeholder",
   gridEyebrow: "Things To Do",
   gridCountNoun: ["listing", "listings"],
