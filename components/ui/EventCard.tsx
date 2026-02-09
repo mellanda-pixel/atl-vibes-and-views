@@ -47,7 +47,7 @@ export function EventCard({
   if (variant === "list") {
     return (
       <Link
-        href={`/hub/events/${slug}`}
+        href={`/events/${slug}`}
         className={`group flex gap-4 py-3 border-b border-gray-100 last:border-0 ${className}`}
       >
         {/* Date Block */}
@@ -100,7 +100,7 @@ export function EventCard({
   /* --- Featured / Standard Variant --- */
   return (
     <article className={`group ${className}`}>
-      <Link href={`/hub/events/${slug}`} className="block">
+      <Link href={`/events/${slug}`} className="block">
         {/* Image */}
         <div className="relative aspect-[3/2] overflow-hidden bg-gray-light">
           {imageUrl ? (

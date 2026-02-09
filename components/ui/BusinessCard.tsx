@@ -43,7 +43,7 @@ export function BusinessCard({
 
   return (
     <article className={`group border border-gray-100 bg-white hover:shadow-md transition-shadow ${className}`}>
-      <Link href={`/hub/businesses/${slug}`} className="block">
+      <Link href={`/places/${slug}`} className="block">
         {/* Image */}
         <div className="relative aspect-[3/2] overflow-hidden bg-gray-light">
           {imageUrl ? (

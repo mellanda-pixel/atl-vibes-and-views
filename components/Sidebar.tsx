@@ -174,7 +174,7 @@ export function FeaturedStoriesWidget({
         {stories.map((story, i) => (
           <li key={story.slug}>
             <Link
-              href={`/blog/${story.slug}`}
+              href={`/stories/${story.slug}`}
               className="group flex gap-3"
             >
               {story.imageUrl ? (

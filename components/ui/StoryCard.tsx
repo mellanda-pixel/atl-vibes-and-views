@@ -41,7 +41,7 @@ export function StoryCard({
 }: StoryCardProps) {
   if (variant === "compact") {
     return (
-      <Link href={`/blog/${slug}`} className={`group flex gap-3 ${className}`}>
+      <Link href={`/stories/${slug}`} className={`group flex gap-3 ${className}`}>
         {imageUrl && (
           <div className="w-20 h-20 shrink-0 overflow-hidden bg-gray-light">
             <img
@@ -68,7 +68,7 @@ export function StoryCard({
 
   return (
     <article className={`group ${className}`}>
-      <Link href={`/blog/${slug}`} className="block">
+      <Link href={`/stories/${slug}`} className="block">
         {/* Image */}
         {imageUrl && (
           <div
