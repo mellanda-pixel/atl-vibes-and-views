@@ -563,7 +563,7 @@ export default async function ThingsToDoDetailPage({
                 {amenities.map((a: any) => (
                   <span
                     key={a.id}
-                    className="inline-block bg-[#f5f5f5] px-3 py-1 text-xs font-medium text-[#333]"
+                    className="inline-block bg-[#f8f5f0] text-[#1a1a1a] text-xs font-medium px-3 py-1.5 hover:bg-[#fee198] transition-colors"
                   >
                     {a.name}
                   </span>
@@ -585,7 +585,7 @@ export default async function ThingsToDoDetailPage({
                 {tags.map((t: any) => (
                   <span
                     key={t.id}
-                    className="inline-block bg-[#f8f5f0] px-3 py-1 text-xs font-medium text-[#1a1a1a]"
+                    className="inline-block bg-[#f8f5f0] text-[#1a1a1a] text-xs font-medium px-3 py-1.5 hover:bg-[#fee198] transition-colors"
                   >
                     {t.name}
                   </span>

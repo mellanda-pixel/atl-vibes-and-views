@@ -369,9 +369,7 @@ export function StoriesArchiveClient({
                       {featuredPosts[0].title}
                     </h3>
                     {featuredPosts[0].excerpt && (
-                      <p className="text-white/70 text-sm mt-2 line-clamp-2 hidden md:block">
-                        {featuredPosts[0].excerpt}
-                      </p>
+                      <p className="sr-only">{featuredPosts[0].excerpt}</p>
                     )}
                     <div className="flex items-center gap-3 mt-3">
                       {featuredPosts[0].published_at && (

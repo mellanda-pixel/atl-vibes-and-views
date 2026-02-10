@@ -44,9 +44,7 @@ export function RelatedStoryCard({ post }: { post: RelatedPost }) {
         {post.title}
       </h3>
       {post.excerpt && (
-        <p className="text-gray-dark text-sm mt-1.5 line-clamp-2">
-          {post.excerpt}
-        </p>
+        <p className="sr-only">{post.excerpt}</p>
       )}
       <div className="flex items-center justify-between mt-2">
         {post.published_at && (
