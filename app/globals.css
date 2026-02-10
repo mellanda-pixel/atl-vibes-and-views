@@ -207,6 +207,88 @@ hr {
   margin: var(--gutter) 0;
 }
 
+/* --- Article Body Prose Styles --- */
+.article-body {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: var(--gray-dark);
+}
+
+.article-body p {
+  margin-bottom: 1.5em;
+}
+
+.article-body h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+  color: var(--black);
+}
+
+.article-body h3 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin-top: 1.75em;
+  margin-bottom: 0.5em;
+  color: var(--black);
+}
+
+.article-body a {
+  color: var(--red-brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.article-body a:hover {
+  color: var(--black);
+}
+
+.article-body blockquote {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--black);
+  border-left: 4px solid var(--gold-light);
+  padding-left: 1.5rem;
+  margin: 2rem 0;
+}
+
+.article-body img {
+  max-width: 100%;
+  height: auto;
+  margin: 2rem 0;
+}
+
+.article-body ul,
+.article-body ol {
+  margin-bottom: 1.5em;
+  padding-left: 1.5em;
+}
+
+.article-body li {
+  margin-bottom: 0.5em;
+}
+
+.article-body ul li {
+  list-style-type: disc;
+}
+
+.article-body ol li {
+  list-style-type: decimal;
+}
+
+.article-body strong {
+  font-weight: 600;
+  color: var(--black);
+}
+
+.article-body hr {
+  margin: 2.5rem 0;
+}
+
 /* --- Focus States (Accessibility) --- */
 :focus-visible {
   outline: 2px solid var(--gold-dark);

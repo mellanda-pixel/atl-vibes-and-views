@@ -12,6 +12,7 @@ import type {
   Neighborhood,
   BlogPost,
   BlogPostWithAuthor,
+  BlogPostFull,
   BusinessListing,
   BusinessListingWithNeighborhood,
   EventItem,
@@ -149,6 +150,43 @@ export async function getBlogPostById(
     .single();
   if (error && error.code !== "PGRST116") throw error;
   return data as BlogPostWithAuthor | null;
+}
+
+/** Full blog post by slug — includes neighborhood + area joins */
+export async function getBlogPostBySlugFull(
+  slug: string
+): Promise<BlogPostFull | null> {
+  const { data, error } = await sb()
+    .from("blog_posts")
+    .select("*, authors(*), categories(*), neighborhoods(*, areas(*))")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .single();
+  if (error && error.code !== "PGRST116") throw error;
+  return data as BlogPostFull | null;
+}
+
+/** Businesses linked to a blog post via post_businesses join table */
+export async function getBusinessesByPostId(
+  postId: string,
+  limit = 10
+): Promise<BusinessListingWithNeighborhood[]> {
+  const { data: links, error: linkErr } = await sb()
+    .from("post_businesses")
+    .select("business_id")
+    .eq("post_id", postId)
+    .returns<{ business_id: string }[]>();
+  if (linkErr || !links?.length) return [];
+
+  const bizIds = links.map((l) => l.business_id);
+  const { data, error } = await sb()
+    .from("business_listings")
+    .select("*, neighborhoods(*), categories(*)")
+    .in("id", bizIds)
+    .eq("status", "active")
+    .limit(limit);
+  if (error) throw error;
+  return (data as BusinessListingWithNeighborhood[]) ?? [];
 }
 
 /* ============================================================

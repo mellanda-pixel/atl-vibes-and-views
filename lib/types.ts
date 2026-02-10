@@ -86,6 +86,7 @@ export interface BlogPost {
   status: string;
   scheduled_publish_date?: string;
   published_at?: string;
+  content_type?: string;
   content_source?: string;
   source_url?: string;
   google_doc_url?: string;
@@ -346,6 +347,12 @@ export interface EventItemWithNeighborhood extends EventItem {
 
 export interface NeighborhoodWithArea extends Neighborhood {
   areas?: Area;
+}
+
+export interface BlogPostFull extends BlogPost {
+  authors?: Author;
+  categories?: Category;
+  neighborhoods?: NeighborhoodWithArea;
 }
 
 /* --- Media tables --- */
