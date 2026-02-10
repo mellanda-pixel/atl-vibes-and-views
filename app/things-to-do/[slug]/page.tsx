@@ -585,7 +585,7 @@ export default async function ThingsToDoDetailPage({
                 {tags.map((t: any) => (
                   <span
                     key={t.id}
-                    className="inline-block border border-gray-300 px-3 py-1 text-xs text-gray-500"
+                    className="inline-block bg-[#f8f5f0] px-3 py-1 text-xs font-medium text-[#1a1a1a]"
                   >
                     {t.name}
                   </span>
@@ -789,7 +789,7 @@ export default async function ThingsToDoDetailPage({
 
             {/* ── Video ── */}
             {biz.video_url && (
-              <section className="mb-10">
+              <section className="mb-10 bg-[#f8f5f0] p-6">
                 <h2 className="font-display text-2xl font-bold text-black mb-4">
                   Video
                 </h2>

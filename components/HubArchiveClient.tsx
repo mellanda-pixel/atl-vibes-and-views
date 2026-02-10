@@ -238,7 +238,7 @@ export function HubArchiveClient({
           </div>
           <button
             type="submit"
-            className="shrink-0 px-5 bg-[#c1121f] text-white hover:bg-[#a50f1a] transition-colors rounded-r-full"
+            className="shrink-0 px-5 bg-[#fee198] text-[#1a1a1a] hover:bg-[#f5d87a] transition-colors rounded-r-full"
             aria-label="Search"
           >
             <Search size={16} />
