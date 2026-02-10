@@ -607,7 +607,7 @@ export default async function BusinessDetailPage({
                 {amenities.map((a: any) => (
                   <span
                     key={a.id}
-                    className="inline-block bg-[#f5f5f5] px-3 py-1 text-xs font-medium text-[#333]"
+                    className="inline-block bg-[#f8f5f0] text-[#1a1a1a] text-xs font-medium px-3 py-1.5 hover:bg-[#fee198] transition-colors"
                   >
                     {a.name}
                   </span>
@@ -629,7 +629,7 @@ export default async function BusinessDetailPage({
                 {tags.map((t: any) => (
                   <span
                     key={t.id}
-                    className="inline-block bg-[#f8f5f0] px-3 py-1 text-xs font-medium text-[#1a1a1a]"
+                    className="inline-block bg-[#f8f5f0] text-[#1a1a1a] text-xs font-medium px-3 py-1.5 hover:bg-[#fee198] transition-colors"
                   >
                     {t.name}
                   </span>
@@ -651,7 +651,7 @@ export default async function BusinessDetailPage({
                 {identities.map((id: any) => (
                   <span
                     key={id.id}
-                    className="inline-flex items-center gap-1 bg-[#c1121f]/10 px-3 py-1 text-xs font-medium text-[#c1121f]"
+                    className="inline-flex items-center gap-1 bg-[#f8f5f0] text-[#1a1a1a] text-xs font-medium px-3 py-1.5 hover:bg-[#fee198] transition-colors"
                   >
                     <BadgeCheck size={12} /> {id.name}
                   </span>
