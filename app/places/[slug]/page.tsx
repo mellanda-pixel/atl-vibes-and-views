@@ -609,7 +609,7 @@ export default async function BusinessDetailPage({
                 {tags.map((t: any) => (
                   <span
                     key={t.id}
-                    className="inline-block border border-gray-300 px-3 py-1 text-xs text-gray-500"
+                    className="inline-block bg-[#f8f5f0] px-3 py-1 text-xs font-medium text-[#1a1a1a]"
                   >
                     {t.name}
                   </span>
@@ -780,6 +780,30 @@ export default async function BusinessDetailPage({
       </section>
 
       {/* ============================================================
+          BUSINESS LOGO (overlaps hero bottom)
+          ============================================================ */}
+      <div className="relative max-w-[1280px] mx-auto px-6">
+        <div className="-mt-12 relative z-10">
+          <div className="w-[96px] h-[96px] bg-white border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
+            {biz.logo ? (
+              <Image
+                src={biz.logo}
+                alt={`${biz.business_name} logo`}
+                width={96}
+                height={96}
+                className="object-contain"
+                unoptimized
+              />
+            ) : (
+              <span className="text-3xl font-display font-bold text-[#1a1a1a]">
+                {biz.business_name.charAt(0)}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================
           MAIN LAYOUT
           ============================================================ */}
       <div className="max-w-[1280px] mx-auto px-6 py-8">
@@ -869,7 +893,7 @@ export default async function BusinessDetailPage({
 
             {/* ── Video ── */}
             {biz.video_url && (
-              <section className="mb-10">
+              <section className="mb-10 bg-[#f8f5f0] p-6">
                 <h2 className="font-display text-2xl font-bold text-black mb-4">
                   Video
                 </h2>

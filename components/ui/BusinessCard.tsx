@@ -159,7 +159,7 @@ export function BusinessCard({
           {tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="px-2 py-0.5 bg-gray-light text-[10px] text-gray-dark"
+              className="px-3 py-1 bg-[#f8f5f0] text-xs font-medium text-[#1a1a1a]"
             >
               {tag}
             </span>

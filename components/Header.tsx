@@ -264,6 +264,13 @@ export function Header() {
             {/* ===== MOBILE VERSION — Full nav menu (visible when main nav is hidden: < lg) ===== */}
             <div className="lg:hidden px-8 flex-1">
               <nav className="space-y-1">
+                {/* Submit CTA — prominent at top */}
+                <div className="pb-4 mb-2 border-b border-white/10">
+                  <Link href="/submit" onClick={closeDrawer} className="block w-full text-center bg-[#fee198] text-[#1a1a1a] text-xs font-semibold uppercase tracking-eyebrow px-5 py-3 hover:bg-[#f5d87a] transition-colors">
+                    Submit a Listing
+                  </Link>
+                </div>
+
                 {/* Simple links */}
                 <MobileNavLink href="/" onClick={closeDrawer}>Home</MobileNavLink>
 
@@ -326,13 +333,6 @@ export function Header() {
 
                 <MobileNavLink href="/city-watch" onClick={closeDrawer}>City Watch</MobileNavLink>
                 <MobileNavLink href="/media" onClick={closeDrawer}>Media</MobileNavLink>
-
-                {/* Submit Listing CTA in mobile */}
-                <div className="pt-4">
-                  <Link href="/submit" onClick={closeDrawer} className="inline-flex items-center px-5 py-2.5 bg-[#e6c46d] text-black text-xs font-semibold uppercase tracking-eyebrow rounded-full hover:bg-white transition-colors">
-                    Submit Listing
-                  </Link>
-                </div>
               </nav>
             </div>
 

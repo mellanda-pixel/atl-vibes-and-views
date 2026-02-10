@@ -171,7 +171,7 @@ export function SubmitCTA({
       <p className="text-sm text-white/70 mb-4">{description}</p>
       <Link
         href={href}
-        className="block w-full text-center bg-[#c1121f] text-white font-semibold text-sm uppercase tracking-wide px-6 py-3 hover:bg-[#a50f1a] transition-colors"
+        className="block w-full text-center bg-[#fee198] text-[#1a1a1a] font-semibold text-sm uppercase tracking-wide px-6 py-3 hover:bg-[#f5d87a] transition-colors"
       >
         {buttonText}
       </Link>
