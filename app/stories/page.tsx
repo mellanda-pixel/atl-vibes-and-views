@@ -1,13 +1,5 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { NewsletterBlock } from "@/components/ui/NewsletterBlock";
-import {
-  NewsletterWidget,
-  AdPlacement,
-  SubmitCTA,
-  SidebarWidget,
-  WidgetTitle,
-} from "@/components/Sidebar";
 import { StoriesArchiveClient } from "@/components/StoriesArchiveClient";
 import {
   getBlogPostsWithNeighborhood,
@@ -64,6 +56,7 @@ export default async function StoriesPage({
     area?: string;
     neighborhood?: string;
     search?: string;
+    pillar?: string;
   }>;
 }) {
   const filters = await searchParams;
@@ -71,6 +64,7 @@ export default async function StoriesPage({
   const areaFilter = filters.area || undefined;
   const neighborhoodFilter = filters.neighborhood || undefined;
   const searchFilter = filters.search?.trim() || undefined;
+  const pillarFilter = filters.pillar || undefined;
 
   /* ── Fetch areas for filter dropdown ── */
   const areas = await getAreas().catch(() => []);
@@ -87,8 +81,13 @@ export default async function StoriesPage({
     }
   }
 
-  /* ── Fetch ALL posts (no contentType filter) ── */
+  /* ── Resolve content_type from pillar param ── */
+  const contentTypeFromPillar =
+    pillarFilter === "news" ? "news" : pillarFilter === "guide" ? "guide" : undefined;
+
+  /* ── Fetch posts (filtered by pillar content_type if set) ── */
   const allPosts = await getBlogPostsWithNeighborhood({
+    ...(contentTypeFromPillar ? { contentType: contentTypeFromPillar } : {}),
     ...(filterNeighborhoodIds ? { neighborhoodIds: filterNeighborhoodIds } : {}),
     ...(searchFilter ? { search: searchFilter } : {}),
   }).catch(() => []);
@@ -117,82 +116,8 @@ export default async function StoriesPage({
     .map(([slug, name]) => ({ slug, name }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  /* ── Neighborhoods in Stories (for sidebar) ── */
-  const neighborhoodCounts = new Map<string, { name: string; slug: string; count: number }>();
-  allPosts.forEach((p) => {
-    if (p.neighborhoods?.name && p.neighborhoods?.slug) {
-      const key = p.neighborhoods.slug;
-      const existing = neighborhoodCounts.get(key);
-      if (existing) {
-        existing.count++;
-      } else {
-        neighborhoodCounts.set(key, {
-          name: p.neighborhoods.name,
-          slug: p.neighborhoods.slug,
-          count: 1,
-        });
-      }
-    }
-  });
-  const storyNeighborhoods = [...neighborhoodCounts.values()]
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 6);
-
   /* ── Map posts to client format ── */
   const storyPosts = finalPosts.map(mapPostToStoryPost);
-
-  /* ── Sidebar ── */
-  const sidebarContent = (
-    <>
-      <NewsletterWidget title="Stay in the Loop" />
-
-      {storyNeighborhoods.length > 0 && (
-        <SidebarWidget>
-          <WidgetTitle className="text-[#c1121f]">
-            Popular Neighborhoods
-          </WidgetTitle>
-          <ul className="space-y-1.5">
-            {storyNeighborhoods.map((n) => (
-              <li key={n.slug}>
-                <Link
-                  href={`/neighborhoods/${n.slug}`}
-                  className="flex items-center justify-between text-sm text-gray-dark hover:text-black transition-colors py-1"
-                >
-                  <span>{n.name}</span>
-                  <span className="text-xs text-gray-mid">{n.count}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </SidebarWidget>
-      )}
-
-      <AdPlacement slot="sidebar_top" />
-
-      <SidebarWidget>
-        <WidgetTitle className="text-[#c1121f]">Explore by Area</WidgetTitle>
-        <ul className="space-y-1.5">
-          {areas.map((a) => (
-            <li key={a.slug}>
-              <Link
-                href={`/areas/${a.slug}`}
-                className="text-sm text-gray-dark hover:text-black transition-colors py-1 block"
-              >
-                {a.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </SidebarWidget>
-
-      <SubmitCTA
-        heading="Have a Story Tip?"
-        description="Know something happening in Atlanta? We want to hear from you."
-        buttonText="Contact Us"
-        href="/contact"
-      />
-    </>
-  );
 
   /* ── JSON-LD ── */
   const jsonLd = {
@@ -221,12 +146,13 @@ export default async function StoriesPage({
         areas={areas.map((a) => ({ id: a.id, name: a.name, slug: a.slug }))}
         heroTitle="Stories"
         heroSubtitle="Atlanta news, neighborhood guides, dining spotlights, and culture from every corner of the city."
-        sidebar={sidebarContent}
+        showTabs={true}
         currentFilters={{
           category: categoryFilter,
           area: areaFilter,
           neighborhood: neighborhoodFilter,
           search: searchFilter,
+          pillar: pillarFilter,
         }}
       />
 

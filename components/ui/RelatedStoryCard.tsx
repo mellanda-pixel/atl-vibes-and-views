@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin } from "lucide-react";
+import { MapPin, ArrowRight } from "lucide-react";
 
 const PH_POST = "https://placehold.co/600x400/1a1a1a/e6c46d?text=Story";
 
@@ -13,6 +13,7 @@ export interface RelatedPost {
   neighborhood_name?: string | null;
   neighborhood_slug?: string | null;
   excerpt?: string | null;
+  is_featured?: boolean;
 }
 
 function formatDate(dateStr: string): string {
@@ -26,6 +27,7 @@ function formatDate(dateStr: string): string {
 export function RelatedStoryCard({ post }: { post: RelatedPost }) {
   return (
     <Link href={`/stories/${post.slug}`} className="group block">
+      {/* Image area */}
       <div className="relative aspect-[16/10] overflow-hidden mb-3 bg-gray-100">
         <Image
           src={post.featured_image_url || PH_POST}
@@ -34,39 +36,58 @@ export function RelatedStoryCard({ post }: { post: RelatedPost }) {
           unoptimized
           className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
+        {/* Desktop-only excerpt overlay on image hover */}
+        {post.excerpt && (
+          <div className="hidden lg:flex absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 items-center justify-center px-6">
+            <p className="text-white text-sm line-clamp-3 text-center">{post.excerpt}</p>
+          </div>
+        )}
       </div>
+
+      {/* Featured badge */}
+      {post.is_featured && (
+        <span className="bg-[#fee198] text-[#1a1a1a] text-[9px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 inline-block mb-1">
+          Featured
+        </span>
+      )}
+
+      {/* Category eyebrow */}
       {post.category_name && (
-        <span className="text-[#c1121f] text-[10px] font-semibold uppercase tracking-eyebrow">
+        <span className={`text-[#c1121f] text-[10px] font-semibold uppercase tracking-eyebrow block ${post.is_featured ? "" : "mt-3"}`}>
           {post.category_name}
         </span>
       )}
+
+      {/* Title */}
       <h3 className="font-display text-lg font-semibold text-black leading-snug mt-1 group-hover:text-[#c1121f] transition-colors line-clamp-2">
         {post.title}
       </h3>
-      {post.excerpt && (
-        <p className="sr-only">{post.excerpt}</p>
+
+      {/* Neighborhood link — clean text, no pill */}
+      {post.neighborhood_name && post.neighborhood_slug && (
+        <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+          <Link
+            href={`/neighborhoods/${post.neighborhood_slug}`}
+            className="inline-flex items-center gap-1 text-[#c1121f] text-[10px] font-semibold uppercase tracking-eyebrow hover:text-[#b89a5a] transition-colors"
+          >
+            <MapPin size={10} />
+            {post.neighborhood_name}
+          </Link>
+        </div>
       )}
+
+      {/* Date + Arrow row */}
       <div className="flex items-center justify-between mt-2">
         {post.published_at && (
-          <p className="text-gray-mid text-xs">
-            {formatDate(post.published_at)}
-          </p>
+          <span className="text-xs text-gray-mid">{formatDate(post.published_at)}</span>
         )}
-        {post.neighborhood_name && post.neighborhood_slug && (
-          <span
-            onClick={(e) => e.stopPropagation()}
-            className="inline-block"
-          >
-            <Link
-              href={`/neighborhoods/${post.neighborhood_slug}`}
-              className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-[10px] text-gray-dark font-medium hover:bg-[#fee198] hover:text-black transition-colors"
-            >
-              <MapPin size={10} />
-              {post.neighborhood_name}
-            </Link>
-          </span>
-        )}
+        <ArrowRight size={14} className="text-gray-400" />
       </div>
+
+      {/* Mobile excerpt */}
+      {post.excerpt && (
+        <p className="lg:hidden text-sm text-gray-mid line-clamp-2 mt-1">{post.excerpt}</p>
+      )}
     </Link>
   );
 }

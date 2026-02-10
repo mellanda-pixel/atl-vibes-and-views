@@ -834,3 +834,52 @@ export async function getMediaItems(opts?: {
 
   return items;
 }
+
+/* ============================================================
+   NEWSLETTERS
+   ============================================================ */
+
+export interface Newsletter {
+  id: string;
+  issue_date: string;
+  issue_slug: string;
+  subject_line: string;
+  preview_text: string | null;
+  editor_intro: string | null;
+  status: string;
+  is_public: boolean | null;
+  newsletter_type_id: string | null;
+  created_at: string;
+}
+
+export interface NewsletterType {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export async function getNewsletters(opts?: {
+  limit?: number;
+}): Promise<(Newsletter & { newsletter_types?: NewsletterType | null })[]> {
+  try {
+    let q = sb()
+      .from("newsletters")
+      .select("*, newsletter_types(*)")
+      .eq("status", "published")
+      .eq("is_public", true)
+      .order("issue_date", { ascending: false });
+
+    if (opts?.limit) q = q.limit(opts.limit);
+
+    const { data, error } = await q.returns<
+      (Newsletter & { newsletter_types?: NewsletterType | null })[]
+    >();
+    if (error) {
+      console.error("getNewsletters error:", error.message);
+      return [];
+    }
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
