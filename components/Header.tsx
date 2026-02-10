@@ -180,11 +180,6 @@ export function Header({ exploreData = [] }: HeaderProps) {
                       <ChevronRight size={14} className="text-gray-400" />
                     </Link>
                   ))}
-                  <div className="border-t border-gray-100 mt-2 pt-2 px-5">
-                    <Link href="/neighborhoods" className="text-[#c1121f] text-sm font-semibold hover:underline">
-                      All Neighborhoods &rarr;
-                    </Link>
-                  </div>
                 </div>
                 {/* Right — Neighborhoods for hovered area */}
                 <div className="flex-1 py-3 min-w-[300px]">
@@ -206,16 +201,14 @@ export function Header({ exploreData = [] }: HeaderProps) {
                           </Link>
                         ))}
                       </div>
-                      {activeAreaGroup.neighborhoods.length > MAX_NEIGHBORHOODS && (
-                        <div className="px-5 pt-2 mt-1 border-t border-gray-100">
-                          <Link
-                            href={`/neighborhoods?area=${activeAreaGroup.area_slug}`}
-                            className="text-[#c1121f] text-sm font-semibold hover:underline"
-                          >
-                            See All Neighborhoods &rarr;
-                          </Link>
-                        </div>
-                      )}
+                      <div className="px-5 pt-2 mt-1 border-t border-gray-100">
+                        <Link
+                          href={`/neighborhoods?area=${activeAreaGroup.area_slug}`}
+                          className="text-[#c1121f] text-sm font-semibold hover:underline"
+                        >
+                          See All Neighborhoods &rarr;
+                        </Link>
+                      </div>
                     </>
                   ) : (
                     <div className="px-5 py-4 text-sm text-gray-mid">
@@ -374,22 +367,17 @@ export function Header({ exploreData = [] }: HeaderProps) {
                                   {n.name}
                                 </Link>
                               ))}
-                              {group.neighborhoods.length > MAX_NEIGHBORHOODS && (
-                                <Link
-                                  href={`/neighborhoods?area=${group.area_slug}`}
-                                  onClick={closeDrawer}
-                                  className="block py-1.5 text-[#c1121f] text-sm font-semibold hover:text-gold-light transition-colors"
-                                >
-                                  See All Neighborhoods &rarr;
-                                </Link>
-                              )}
+                              <Link
+                                href={`/neighborhoods?area=${group.area_slug}`}
+                                onClick={closeDrawer}
+                                className="block py-1.5 text-[#c1121f] text-sm font-semibold hover:text-gold-light transition-colors"
+                              >
+                                See All Neighborhoods &rarr;
+                              </Link>
                             </div>
                           )}
                         </div>
                       ))}
-                      <Link href="/neighborhoods" onClick={closeDrawer} className="block py-2 text-white text-sm font-semibold hover:text-gold-light transition-colors">
-                        Explore All Neighborhoods
-                      </Link>
                     </div>
                   )}
                 </div>
