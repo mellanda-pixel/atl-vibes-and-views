@@ -841,39 +841,35 @@ export async function getMediaItems(opts?: {
 
 export interface Newsletter {
   id: string;
-  issue_date: string;
-  issue_slug: string;
-  subject_line: string;
-  preview_text: string | null;
-  editor_intro: string | null;
-  status: string;
-  is_public: boolean | null;
-  newsletter_type_id: string | null;
-  created_at: string;
-}
-
-export interface NewsletterType {
-  id: string;
   name: string;
   slug: string;
+  issue_date: string;
+  issue_slug: string;
+  subject_line: string | null;
+  preview_text: string | null;
+  editor_intro: string | null;
+  html_body: string | null;
+  status: string;
+  is_public: boolean | null;
+  send_count: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export async function getNewsletters(opts?: {
   limit?: number;
-}): Promise<(Newsletter & { newsletter_types?: NewsletterType | null })[]> {
+}): Promise<Newsletter[]> {
   try {
     let q = sb()
       .from("newsletters")
-      .select("*, newsletter_types(*)")
+      .select("*")
       .eq("status", "published")
       .eq("is_public", true)
       .order("issue_date", { ascending: false });
 
     if (opts?.limit) q = q.limit(opts.limit);
 
-    const { data, error } = await q.returns<
-      (Newsletter & { newsletter_types?: NewsletterType | null })[]
-    >();
+    const { data, error } = await q.returns<Newsletter[]>();
     if (error) {
       console.error("getNewsletters error:", error.message);
       return [];
@@ -882,4 +878,33 @@ export async function getNewsletters(opts?: {
   } catch {
     return [];
   }
+}
+
+/* ============================================================
+   NEWSLETTER TYPES (standalone series catalog)
+   ============================================================ */
+
+export interface NewsletterType {
+  id: string;
+  name: string;
+  slug: string;
+  frequency: string;
+  send_day: string | null;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export async function getNewsletterTypes(): Promise<NewsletterType[]> {
+  const { data, error } = await sb()
+    .from("newsletter_types")
+    .select("*")
+    .eq("is_active", true)
+    .order("name")
+    .returns<NewsletterType[]>();
+  if (error) {
+    console.error("getNewsletterTypes error:", error.message);
+    return [];
+  }
+  return data ?? [];
 }

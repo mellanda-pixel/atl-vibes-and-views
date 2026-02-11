@@ -97,16 +97,16 @@ export default async function NewslettersPage() {
                 href={`/hub/newsletters/${nl.issue_slug}`}
                 className="group block border border-gray-200 p-6 hover:border-[#e6c46d] transition-colors"
               >
-                {/* Newsletter type eyebrow */}
-                {nl.newsletter_types?.name && (
+                {/* Newsletter name eyebrow */}
+                {nl.name && (
                   <span className="text-[#c1121f] text-[10px] font-semibold uppercase tracking-eyebrow">
-                    {nl.newsletter_types.name}
+                    {nl.name}
                   </span>
                 )}
 
                 {/* Subject line */}
                 <h3 className="font-display text-lg font-semibold text-black leading-snug mt-1 group-hover:text-[#c1121f] transition-colors line-clamp-2">
-                  {nl.subject_line}
+                  {nl.subject_line || nl.name}
                 </h3>
 
                 {/* Date */}
