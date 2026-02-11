@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Send } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { NewsletterForm } from "@/components/NewsletterForm";
 import { NewsletterArchiveClient } from "@/components/newsletter/NewsletterArchiveClient";
 import {
   getNewsletters,
@@ -140,23 +140,7 @@ export default async function NewslettersPage({
           <p className="text-sm text-gray-dark font-medium text-center sm:text-left">
             Get Atlanta in your inbox — free, weekly delivery
           </p>
-          <form
-            className="flex items-center bg-white rounded-full overflow-hidden shadow-sm border border-gray-200 w-full sm:w-auto"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 sm:w-[220px] px-5 py-3 text-sm outline-none bg-transparent placeholder:text-gray-mid"
-            />
-            <button
-              type="submit"
-              className="flex items-center gap-2 px-5 py-3 bg-[#fee198] text-[#1a1a1a] text-xs font-semibold uppercase tracking-eyebrow rounded-full mr-1 hover:bg-[#f5d87a] transition-colors whitespace-nowrap"
-            >
-              <Send size={12} />
-              Subscribe
-            </button>
-          </form>
+          <NewsletterForm compact />
         </div>
       </div>
 
@@ -191,23 +175,7 @@ export default async function NewslettersPage({
             Get the latest on Atlanta&rsquo;s neighborhoods, events, and culture
             delivered to your inbox. No spam. Unsubscribe anytime.
           </p>
-          <form
-            className="flex items-center max-w-md mx-auto bg-white rounded-full overflow-hidden shadow-sm"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-6 py-4 text-sm outline-none bg-transparent placeholder:text-gray-mid"
-            />
-            <button
-              type="submit"
-              className="flex items-center gap-2 px-6 py-3.5 bg-[#fee198] text-[#1a1a1a] text-xs font-semibold uppercase tracking-eyebrow rounded-full mr-1 hover:bg-[#f5d87a] transition-colors"
-            >
-              <Send size={14} />
-              Subscribe
-            </button>
-          </form>
+          <NewsletterForm />
         </div>
       </section>
 
