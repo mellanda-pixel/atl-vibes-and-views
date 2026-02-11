@@ -2,12 +2,9 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useCallback, useState, useTransition } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { Search, X, ChevronDown, MapPin, ArrowRight, FileText } from "lucide-react";
+import { Search, X, ChevronDown, ArrowRight, FileText } from "lucide-react";
 import { RelatedStoryCard } from "@/components/ui/RelatedStoryCard";
-import type { RelatedPost } from "@/components/ui/RelatedStoryCard";
-import { NewsletterWidget, SubmitCTA } from "@/components/Sidebar";
 import { AdBlock } from "@/components/ui/AdBlock";
 
 /* ============================================================
@@ -49,12 +46,13 @@ interface StoriesArchiveClientProps {
   heroTitle: string;
   heroSubtitle: string;
   heroImage?: string;
-  sidebar: React.ReactNode;
+  showTabs?: boolean;
   currentFilters: {
     category?: string;
     area?: string;
     neighborhood?: string;
     search?: string;
+    pillar?: string;
   };
 }
 
@@ -64,14 +62,15 @@ interface StoriesArchiveClientProps {
 
 const PH_HERO = "https://placehold.co/1920x600/1a1a1a/e6c46d?text=Stories";
 
-function formatDate(dateStr?: string | null): string {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+/* ============================================================
+   PILLAR TABS
+   ============================================================ */
+
+const PILLARS = [
+  { label: "All", value: "" },
+  { label: "City Watch", value: "news" },
+  { label: "Atlanta Guide", value: "guide" },
+] as const;
 
 /* ============================================================
    STORIES ARCHIVE CLIENT
@@ -85,7 +84,7 @@ export function StoriesArchiveClient({
   heroTitle,
   heroSubtitle,
   heroImage,
-  sidebar,
+  showTabs = false,
   currentFilters,
 }: StoriesArchiveClientProps) {
   const router = useRouter();
@@ -117,13 +116,28 @@ export function StoriesArchiveClient({
     [pathname, router, searchParams]
   );
 
+  const switchPillar = useCallback(
+    (pillarValue: string) => {
+      setSearchValue("");
+      setVisibleCount(12);
+      const params = new URLSearchParams();
+      if (pillarValue) params.set("pillar", pillarValue);
+      startTransition(() => {
+        router.push(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
+      });
+    },
+    [pathname, router]
+  );
+
   const clearAllFilters = useCallback(() => {
     setSearchValue("");
     setVisibleCount(12);
+    const params = new URLSearchParams();
+    if (currentFilters.pillar) params.set("pillar", currentFilters.pillar);
     startTransition(() => {
-      router.push(pathname, { scroll: false });
+      router.push(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
     });
-  }, [pathname, router]);
+  }, [pathname, router, currentFilters.pillar]);
 
   const hasActiveFilters =
     currentFilters.category ||
@@ -131,25 +145,10 @@ export function StoriesArchiveClient({
     currentFilters.neighborhood ||
     currentFilters.search;
 
-  /* ── Featured posts (top 3 featured or most recent, only when no filters) ── */
-  const featuredPosts: StoryPost[] = [];
-  const gridPosts: StoryPost[] = [];
+  const activePillar = currentFilters.pillar ?? "";
 
-  if (!hasActiveFilters) {
-    const featured = initialPosts.filter((p) => p.is_featured).slice(0, 3);
-    if (featured.length >= 1) {
-      featuredPosts.push(...featured);
-    } else {
-      featuredPosts.push(...initialPosts.slice(0, 3));
-    }
-    const featuredIds = new Set(featuredPosts.map((p) => p.id));
-    gridPosts.push(...initialPosts.filter((p) => !featuredIds.has(p.id)));
-  } else {
-    gridPosts.push(...initialPosts);
-  }
-
-  const visibleGridPosts = gridPosts.slice(0, visibleCount);
-  const hasMore = visibleCount < gridPosts.length;
+  const visiblePosts = initialPosts.slice(0, visibleCount);
+  const hasMore = visibleCount < initialPosts.length;
 
   /* ── Active filter labels for chips ── */
   const activeFilterChips: { key: string; label: string }[] = [];
@@ -183,7 +182,7 @@ export function StoriesArchiveClient({
   return (
     <>
       {/* ========== HERO ========== */}
-      <section className="relative w-full h-[300px] md:h-[400px] overflow-hidden">
+      <section className="relative w-full h-[180px] md:h-[220px] overflow-hidden">
         <Image
           src={heroImage || PH_HERO}
           alt={heroTitle}
@@ -194,23 +193,47 @@ export function StoriesArchiveClient({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
         <div className="absolute inset-0 flex items-end">
-          <div className="site-container pb-10 md:pb-14">
-            <span className="text-[#e6c46d] text-[11px] font-semibold uppercase tracking-[0.15em] mb-3 block">
+          <div className="site-container pb-8 md:pb-10">
+            <span className="text-[#e6c46d] text-[11px] font-semibold uppercase tracking-[0.15em] mb-2 block">
               {contentType === "news" ? "Atlanta News" : contentType === "guide" ? "Local Knowledge" : "Stories"}
             </span>
-            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-semibold text-white leading-[1.05]">
+            <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-white leading-[1.05]">
               {heroTitle}
             </h1>
-            <p className="text-white/60 text-sm md:text-base mt-3 max-w-lg">
+            <p className="text-white/60 text-sm mt-2 max-w-lg">
               {heroSubtitle}
             </p>
           </div>
         </div>
       </section>
 
-      {/* ========== FILTER BAR ========== */}
+      {/* ========== TABS + FILTER BAR ========== */}
       <section className="site-container py-8 md:py-10">
         <div className="space-y-4">
+          {/* Pillar tabs */}
+          {showTabs && (
+            <div className="flex items-center gap-6 border-b border-gray-200 mb-2">
+              {PILLARS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => switchPillar(p.value)}
+                  className={`pb-3 text-sm font-semibold transition-colors ${
+                    activePillar === p.value
+                      ? "text-black border-b-2 border-[#b89a5a]"
+                      : "text-gray-mid hover:text-black"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+
+              {/* Loading spinner */}
+              {isPending && (
+                <div className="w-4 h-4 border-2 border-[#e6c46d] border-t-transparent rounded-full animate-spin ml-auto" />
+              )}
+            </div>
+          )}
+
           {/* Search row */}
           <div className="relative w-full max-w-2xl">
             <Search
@@ -224,7 +247,7 @@ export function StoriesArchiveClient({
               onKeyDown={(e) => {
                 if (e.key === "Enter") pushFilters({ search: searchValue });
               }}
-              placeholder="Search stories…"
+              placeholder="Search ATL Vibes & Views..."
               className="w-full pl-11 pr-10 py-3 text-sm bg-white border-2 border-[#e6c46d] rounded-full outline-none focus:border-[#d4a94e] focus:shadow-[0_0_0_3px_rgba(230,196,109,0.2)] transition-all placeholder:text-gray-mid"
             />
             {searchValue && (
@@ -302,8 +325,8 @@ export function StoriesArchiveClient({
               </button>
             )}
 
-            {/* Loading spinner */}
-            {isPending && (
+            {/* Loading spinner (when no tabs) */}
+            {!showTabs && isPending && (
               <div className="w-4 h-4 border-2 border-[#e6c46d] border-t-transparent rounded-full animate-spin" />
             )}
           </div>
@@ -329,223 +352,78 @@ export function StoriesArchiveClient({
         </div>
       </section>
 
-      {/* ========== FEATURED STORIES (only when no filters) ========== */}
-      {!hasActiveFilters && featuredPosts.length > 0 && (
-        <section className="site-container pb-12 md:pb-16">
-          <div className="flex items-end justify-between mb-8 border-b border-gray-200 pb-4">
-            <div>
-              <span className="text-[#c1121f] text-[11px] font-semibold uppercase tracking-[0.1em]">
-                Featured
-              </span>
-              <h2 className="font-display text-3xl md:text-4xl font-semibold text-black leading-tight mt-1">
-                {contentType === "news" ? "Top Stories" : contentType === "guide" ? "Editor\u2019s Picks" : "Featured Stories"}
-              </h2>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Large hero card */}
-            {featuredPosts[0] && (
-              <Link
-                href={`/stories/${featuredPosts[0].slug}`}
-                className="group block md:row-span-2"
-              >
-                <div className="relative aspect-[4/3] md:aspect-auto md:h-full overflow-hidden bg-gray-100">
-                  <Image
-                    src={featuredPosts[0].featured_image_url || PH_HERO}
-                    alt={featuredPosts[0].title}
-                    fill
-                    unoptimized
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-                    {featuredPosts[0].category_name && (
-                      <span className="inline-block px-3 py-1 bg-[#fee198] text-black text-[10px] font-semibold uppercase tracking-[0.08em] rounded-full mb-3">
-                        {featuredPosts[0].category_name}
-                      </span>
-                    )}
-                    <h3 className="font-display text-xl md:text-2xl lg:text-3xl font-semibold text-white leading-snug group-hover:text-[#fee198] transition-colors">
-                      {featuredPosts[0].title}
-                    </h3>
-                    {featuredPosts[0].excerpt && (
-                      <p className="sr-only">{featuredPosts[0].excerpt}</p>
-                    )}
-                    <div className="flex items-center gap-3 mt-3">
-                      {featuredPosts[0].published_at && (
-                        <span className="text-white/50 text-xs">
-                          {formatDate(featuredPosts[0].published_at)}
-                        </span>
-                      )}
-                      {featuredPosts[0].neighborhood_name && (
-                        <span className="inline-flex items-center gap-1 text-white/50 text-xs">
-                          <MapPin size={10} />
-                          {featuredPosts[0].neighborhood_name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            )}
-
-            {/* Stacked cards (right column) */}
-            {featuredPosts.slice(1, 3).map((post) => (
-              <Link
-                key={post.id}
-                href={`/stories/${post.slug}`}
-                className="group block"
-              >
-                <div className="relative aspect-[16/10] overflow-hidden mb-3 bg-gray-100">
-                  <Image
-                    src={post.featured_image_url || PH_HERO}
-                    alt={post.title}
-                    fill
-                    unoptimized
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                {post.category_name && (
-                  <span className="text-[#c1121f] text-[10px] font-semibold uppercase tracking-eyebrow">
-                    {post.category_name}
-                  </span>
-                )}
-                <h3 className="font-display text-lg md:text-xl font-semibold text-black leading-snug mt-1 group-hover:text-[#c1121f] transition-colors line-clamp-2">
-                  {post.title}
-                </h3>
-                <div className="flex items-center gap-3 mt-2">
-                  {post.published_at && (
-                    <span className="text-gray-mid text-xs">
-                      {formatDate(post.published_at)}
-                    </span>
-                  )}
-                  {post.neighborhood_name && post.neighborhood_slug && (
-                    <span
-                      onClick={(e) => e.stopPropagation()}
-                      className="inline-block"
-                    >
-                      <Link
-                        href={`/neighborhoods/${post.neighborhood_slug}`}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-[10px] text-gray-dark font-medium hover:bg-[#fee198] hover:text-black transition-colors"
-                      >
-                        <MapPin size={10} />
-                        {post.neighborhood_name}
-                      </Link>
-                    </span>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ========== STORIES GRID + SIDEBAR ========== */}
+      {/* ========== FULL-WIDTH STORIES GRID ========== */}
       <section className="site-container pb-16 md:pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-12 lg:gap-16">
-          {/* ---------- Main Column ---------- */}
-          <div>
-            <div className="flex items-end justify-between mb-8 border-b border-gray-200 pb-4">
-              <div>
-                <span className="text-[#c1121f] text-[11px] font-semibold uppercase tracking-[0.1em]">
-                  Stories
-                </span>
-                <h2 className="font-display text-3xl md:text-4xl font-semibold text-black leading-tight mt-1">
-                  {currentFilters.search
-                    ? `Results for \u201c${currentFilters.search}\u201d`
-                    : "All Stories"}
-                </h2>
-              </div>
-              <span className="text-xs text-gray-mid pb-1">
-                {hasActiveFilters
-                  ? `${gridPosts.length} result${gridPosts.length !== 1 ? "s" : ""}`
-                  : `Showing ${Math.min(visibleCount, gridPosts.length)} of ${gridPosts.length}`}
-              </span>
+        {/* Results count */}
+        <div className="mb-6">
+          <span className="text-xs text-gray-mid">
+            {hasActiveFilters
+              ? `${initialPosts.length} result${initialPosts.length !== 1 ? "s" : ""}`
+              : `Showing ${Math.min(visibleCount, initialPosts.length)} of ${initialPosts.length} stories`}
+          </span>
+        </div>
+
+        {visiblePosts.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {visiblePosts.map((post, index) => (
+                <Fragment key={post.id}>
+                  <div className={post.is_featured ? "border-l-4 border-[#b89a5a] pl-3" : ""}>
+                    <RelatedStoryCard
+                      post={{
+                        slug: post.slug,
+                        title: post.title,
+                        featured_image_url: post.featured_image_url,
+                        category_name: post.category_name,
+                        published_at: post.published_at,
+                        neighborhood_name: post.neighborhood_name,
+                        neighborhood_slug: post.neighborhood_slug,
+                        excerpt: post.excerpt,
+                        is_featured: post.is_featured,
+                      }}
+                    />
+                  </div>
+                  {/* Inline ad banner after every 8th card */}
+                  {(index + 1) % 8 === 0 && (
+                    <div className="col-span-full my-4">
+                      <AdBlock variant="inline" />
+                    </div>
+                  )}
+                </Fragment>
+              ))}
             </div>
 
-            {visibleGridPosts.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
-                  {visibleGridPosts.map((post, index) => (
-                    <Fragment key={post.id}>
-                      <RelatedStoryCard
-                        post={{
-                          slug: post.slug,
-                          title: post.title,
-                          featured_image_url: post.featured_image_url,
-                          category_name: post.category_name,
-                          published_at: post.published_at,
-                          neighborhood_name: post.neighborhood_name,
-                          neighborhood_slug: post.neighborhood_slug,
-                          excerpt: post.excerpt,
-                        }}
-                      />
-                      {index === 5 && (
-                        <div className="col-span-full lg:hidden my-4">
-                          <NewsletterWidget />
-                        </div>
-                      )}
-                      {index === 11 && (
-                        <div className="col-span-full lg:hidden my-4">
-                          <AdBlock variant="inline" />
-                        </div>
-                      )}
-                    </Fragment>
-                  ))}
-                </div>
-
-                {/* Mobile-only: SubmitCTA before Load More */}
-                <div className="lg:hidden my-8">
-                  <SubmitCTA
-                    heading="Have a Story Tip?"
-                    description="Know something happening in Atlanta? We want to hear from you."
-                    buttonText="Contact Us"
-                    href="/contact"
-                  />
-                </div>
-
-                {/* Load More */}
-                {hasMore && (
-                  <div className="flex justify-center mt-12">
-                    <button
-                      onClick={() => setVisibleCount((c) => c + 12)}
-                      className="inline-flex items-center gap-2 px-8 py-3 border-2 border-black text-black text-xs font-semibold uppercase tracking-[0.1em] hover:bg-black hover:text-white transition-colors"
-                    >
-                      Load More Stories
-                      <ArrowRight size={14} />
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              /* Empty state */
-              <div className="text-center py-20">
-                <FileText
-                  size={48}
-                  className="text-gray-300 mx-auto mb-4"
-                />
-                <p className="text-gray-mid text-lg mb-6">
-                  No stories found. Try a different search or filter.
-                </p>
+            {/* Load More */}
+            {hasMore && (
+              <div className="flex justify-center mt-12">
                 <button
-                  onClick={clearAllFilters}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-black text-black text-xs font-semibold uppercase tracking-[0.1em] hover:bg-black hover:text-white transition-colors"
+                  onClick={() => setVisibleCount((c) => c + 12)}
+                  className="inline-flex items-center gap-2 px-8 py-3 border-2 border-black text-black text-xs font-semibold uppercase tracking-[0.1em] hover:bg-black hover:text-white transition-colors"
                 >
-                  Clear Filters
+                  Load More Stories
+                  <ArrowRight size={14} />
                 </button>
               </div>
             )}
+          </>
+        ) : (
+          /* Empty state */
+          <div className="text-center py-20">
+            <FileText
+              size={48}
+              className="text-gray-300 mx-auto mb-4"
+            />
+            <p className="text-gray-mid text-lg mb-6">
+              No stories found. Try a different search or filter.
+            </p>
+            <button
+              onClick={clearAllFilters}
+              className="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-black text-black text-xs font-semibold uppercase tracking-[0.1em] hover:bg-black hover:text-white transition-colors"
+            >
+              Clear Filters
+            </button>
           </div>
-
-          {/* ---------- Sidebar (desktop only) ---------- */}
-          {sidebar && (
-            <aside className="hidden lg:block">
-              <div className="lg:sticky lg:top-6 space-y-8 overflow-hidden">
-                {sidebar}
-              </div>
-            </aside>
-          )}
-        </div>
+        )}
       </section>
     </>
   );

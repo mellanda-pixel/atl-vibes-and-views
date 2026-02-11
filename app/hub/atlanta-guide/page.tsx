@@ -1,19 +1,9 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { EventCard } from "@/components/ui/EventCard";
 import { NewsletterBlock } from "@/components/ui/NewsletterBlock";
-import {
-  NewsletterWidget,
-  AdPlacement,
-  SubmitCTA,
-  SidebarWidget,
-  WidgetTitle,
-} from "@/components/Sidebar";
 import { StoriesArchiveClient } from "@/components/StoriesArchiveClient";
 import {
   getBlogPostsWithNeighborhood,
   getAreas,
-  getEvents,
   getNeighborhoodIdsForArea,
 } from "@/lib/queries";
 import type { BlogPostFull } from "@/lib/types";
@@ -59,15 +49,6 @@ function mapPostToStoryPost(post: BlogPostFull) {
   };
 }
 
-function formatDate(dateStr?: string | null): string {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 export default async function AtlantaGuidePage({
   searchParams,
 }: {
@@ -84,11 +65,8 @@ export default async function AtlantaGuidePage({
   const neighborhoodFilter = filters.neighborhood || undefined;
   const searchFilter = filters.search?.trim() || undefined;
 
-  /* ── Fetch areas + upcoming events in parallel ── */
-  const [areas, upcomingEvents] = await Promise.all([
-    getAreas().catch(() => []),
-    getEvents({ upcoming: true, limit: 5 }).catch(() => []),
-  ]);
+  /* ── Fetch areas for filter dropdown ── */
+  const areas = await getAreas().catch(() => []);
 
   /* ── Resolve neighborhood IDs for area-based filtering ── */
   let filterNeighborhoodIds: string[] | undefined;
@@ -133,82 +111,8 @@ export default async function AtlantaGuidePage({
     .map(([slug, name]) => ({ slug, name }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  /* ── Popular guides (for sidebar) ── */
-  const popularGuides = allPosts
-    .filter((p) => p.is_featured)
-    .slice(0, 5);
-  const popularGuidesBackfill =
-    popularGuides.length >= 5
-      ? popularGuides
-      : [
-          ...popularGuides,
-          ...allPosts
-            .filter((p) => !popularGuides.some((g) => g.id === p.id))
-            .slice(0, 5 - popularGuides.length),
-        ];
-
   /* ── Map posts to client format ── */
   const storyPosts = finalPosts.map(mapPostToStoryPost);
-
-  /* ── Sidebar ── */
-  const sidebarContent = (
-    <>
-      <NewsletterWidget title="Atlanta in Your Inbox" />
-
-      {popularGuidesBackfill.length > 0 && (
-        <SidebarWidget>
-          <WidgetTitle className="text-[#c1121f]">Popular Guides</WidgetTitle>
-          <ul className="space-y-3">
-            {popularGuidesBackfill.map((post) => (
-              <li key={post.id}>
-                <Link
-                  href={`/stories/${post.slug}`}
-                  className="group block"
-                >
-                  <h4 className="text-sm font-semibold text-black group-hover:text-[#c1121f] transition-colors leading-snug line-clamp-2">
-                    {post.title}
-                  </h4>
-                  {post.published_at && (
-                    <p className="text-[11px] text-gray-mid mt-0.5">
-                      {formatDate(post.published_at)}
-                    </p>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </SidebarWidget>
-      )}
-
-      {upcomingEvents.length > 0 && (
-        <SidebarWidget>
-          <WidgetTitle className="text-[#c1121f]">Upcoming Events</WidgetTitle>
-          <div className="space-y-0 divide-y divide-gray-100">
-            {upcomingEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                name={event.title}
-                slug={event.slug}
-                startDate={event.start_date}
-                time={event.start_time ?? undefined}
-                variant="list"
-              />
-            ))}
-          </div>
-          <Link
-            href="/hub/events"
-            className="inline-block mt-4 text-xs font-semibold uppercase tracking-eyebrow text-[#c1121f] hover:text-black transition-colors"
-          >
-            View All Events →
-          </Link>
-        </SidebarWidget>
-      )}
-
-      <AdPlacement slot="sidebar_top" />
-
-      <SubmitCTA />
-    </>
-  );
 
   /* ── JSON-LD ── */
   const jsonLd = {
@@ -238,7 +142,6 @@ export default async function AtlantaGuidePage({
         contentType="guide"
         heroTitle="Atlanta Guide"
         heroSubtitle="Your insider's guide to the city — neighborhood deep dives, best-of lists, and local knowledge."
-        sidebar={sidebarContent}
         currentFilters={{
           category: categoryFilter,
           area: areaFilter,
