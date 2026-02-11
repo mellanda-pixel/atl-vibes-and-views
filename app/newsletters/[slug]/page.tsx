@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Calendar, Mail, Users } from "lucide-react";
 import type { Metadata } from "next";
@@ -16,13 +17,19 @@ import {
   getNewsletterBySlug,
   getAdjacentNewsletters,
   getNewslettersByType,
+  getNewsletterSections,
+  getNewsletterPosts,
   getNeighborhoodsByPopularity,
+  getCategories,
 } from "@/lib/queries";
+import type { NewsletterPostWithBlog } from "@/lib/queries";
+import type { NewsletterSection } from "@/lib/types";
 
 /* ============================================================
    NEWSLETTER DETAIL — /newsletters/[slug]
-   Renders a single newsletter issue with HTML body, sidebar,
-   prev/next navigation, and related editions.
+   Renders structured sections + blog post cards from
+   newsletter_sections & newsletter_posts tables.
+   Falls back to html_body for legacy/manual newsletters.
    ============================================================ */
 
 /* --- Helpers --- */
@@ -43,6 +50,8 @@ function formatShortDate(dateStr: string): string {
     year: "numeric",
   });
 }
+
+const PH_POST = "https://placehold.co/600x400/1a1a1a/e6c46d?text=Story";
 
 /* --- Type color mapping --- */
 const TYPE_COLORS: Record<string, string> = {
@@ -103,25 +112,43 @@ export default async function NewsletterDetailPage({
   const typeSlug = newsletter.name.toLowerCase().replace(/\s+/g, "-");
   const accent = getAccentColor(newsletter.name);
 
-  /* ── Adjacent newsletters for prev/next nav ── */
-  const { prev, next } = await getAdjacentNewsletters(
-    newsletter.issue_date,
-    newsletter.id
-  );
+  /* ── Fetch structured content + sidebar data in parallel ── */
+  const [
+    sections,
+    newsletterPosts,
+    { prev, next },
+    relatedRaw,
+    popularNeighborhoods,
+    allCategories,
+  ] = await Promise.all([
+    getNewsletterSections(newsletter.id),
+    getNewsletterPosts(newsletter.id),
+    getAdjacentNewsletters(newsletter.issue_date, newsletter.id),
+    getNewslettersByType({ typeName: newsletter.name, limit: 5 }),
+    getNeighborhoodsByPopularity({ limit: 6 }),
+    getCategories(),
+  ]);
 
-  /* ── Related issues (same type, exclude current) ── */
-  const relatedRaw = await getNewslettersByType({
-    typeName: newsletter.name,
-    limit: 5,
-  });
   const relatedIssues = relatedRaw
     .filter((nl) => nl.id !== newsletter.id)
     .slice(0, 3);
 
-  /* ── Sidebar data ── */
-  const popularNeighborhoods = await getNeighborhoodsByPopularity({
-    limit: 6,
-  });
+  /* ── Build category lookup map ── */
+  const categoryMap = new Map(allCategories.map((c) => [c.id, c.name]));
+
+  /* ── Determine if structured content is available ── */
+  const hasStructuredContent = sections.length > 0 || newsletterPosts.length > 0;
+
+  /* ── Group posts by section_id ── */
+  const postsBySection = new Map<string | null, NewsletterPostWithBlog[]>();
+  for (const np of newsletterPosts) {
+    const key = np.section_id;
+    if (!postsBySection.has(key)) postsBySection.set(key, []);
+    postsBySection.get(key)!.push(np);
+  }
+
+  /* ── Unsectioned posts (section_id is null) ── */
+  const unsectionedPosts = postsBySection.get(null) ?? [];
 
   /* ── Breadcrumbs ── */
   const breadcrumbItems = [
@@ -226,13 +253,51 @@ export default async function NewsletterDetailPage({
               </div>
             )}
 
-            {/* HTML Body */}
-            {newsletter.html_body ? (
+            {/* ══════════ STRUCTURED CONTENT ══════════ */}
+            {hasStructuredContent ? (
+              <div className="space-y-12">
+                {/* ── Render each section ── */}
+                {sections.map((section) => {
+                  const sectionPosts = postsBySection.get(section.id) ?? [];
+                  return (
+                    <SectionBlock
+                      key={section.id}
+                      section={section}
+                      posts={sectionPosts}
+                      categoryMap={categoryMap}
+                      accent={accent}
+                    />
+                  );
+                })}
+
+                {/* ── Unsectioned posts (section_id IS NULL) ── */}
+                {unsectionedPosts.length > 0 && (
+                  <div>
+                    {sections.length > 0 && (
+                      <h2 className="font-display text-xl md:text-2xl font-semibold text-black mb-6">
+                        More Stories
+                      </h2>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {unsectionedPosts.map((np) => (
+                        <PostCard
+                          key={np.id}
+                          post={np}
+                          categoryMap={categoryMap}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : newsletter.html_body ? (
+              /* ══════════ FALLBACK: html_body for legacy newsletters ══════════ */
               <div
                 className="article-body max-w-none"
                 dangerouslySetInnerHTML={{ __html: newsletter.html_body }}
               />
             ) : (
+              /* ══════════ EMPTY STATE ══════════ */
               <div className="py-12 text-center">
                 <p className="text-gray-mid text-lg">
                   This newsletter edition does not have web content available.
@@ -381,5 +446,138 @@ export default async function NewsletterDetailPage({
         }}
       />
     </>
+  );
+}
+
+/* ============================================================
+   SECTION BLOCK — renders a newsletter section with its posts
+   ============================================================ */
+
+function SectionBlock({
+  section,
+  posts,
+  categoryMap,
+  accent,
+}: {
+  section: NewsletterSection;
+  posts: NewsletterPostWithBlog[];
+  categoryMap: Map<string, string>;
+  accent: string;
+}) {
+  return (
+    <section>
+      {/* Section heading */}
+      <div className="mb-6">
+        <span
+          className="text-[11px] font-semibold uppercase tracking-[0.15em] block mb-1"
+          style={{ color: accent }}
+        >
+          {section.section_name}
+        </span>
+        <div className="w-12 h-[2px]" style={{ backgroundColor: accent }} />
+      </div>
+
+      {/* Section blurb */}
+      {section.section_blurb && (
+        <p className="text-[15px] text-gray-dark leading-relaxed mb-6">
+          {section.section_blurb}
+        </p>
+      )}
+
+      {/* Section image */}
+      {section.section_image_url && (
+        <div className="relative aspect-[21/9] overflow-hidden mb-6 bg-gray-100">
+          <Image
+            src={section.section_image_url}
+            alt={section.section_name}
+            fill
+            unoptimized
+            className="object-cover"
+          />
+        </div>
+      )}
+
+      {/* Blog post cards for this section */}
+      {posts.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {posts.map((np) => (
+            <PostCard key={np.id} post={np} categoryMap={categoryMap} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ============================================================
+   POST CARD — blog post card matching Stories archive design
+   Sharp edges, category pill uses rounded-full, links to /stories/[slug]
+   ============================================================ */
+
+function PostCard({
+  post,
+  categoryMap,
+}: {
+  post: NewsletterPostWithBlog;
+  categoryMap: Map<string, string>;
+}) {
+  const bp = post.blog_post;
+  if (!bp) return null;
+
+  const categoryName = bp.category_id ? categoryMap.get(bp.category_id) ?? null : null;
+
+  return (
+    <Link href={`/stories/${bp.slug}`} className="group block">
+      {/* Image */}
+      <div className="relative aspect-[16/10] overflow-hidden mb-3 bg-gray-100">
+        <Image
+          src={bp.featured_image_url || PH_POST}
+          alt={bp.title}
+          fill
+          unoptimized
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+        {bp.excerpt && (
+          <div className="hidden lg:flex absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 items-center justify-center px-6">
+            <p className="text-white text-sm line-clamp-3 text-center">
+              {bp.excerpt}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Category pill */}
+      {categoryName && (
+        <span className="inline-block bg-[#c1121f]/10 text-[#c1121f] text-[10px] font-semibold uppercase tracking-eyebrow rounded-full px-2.5 py-0.5 mb-1">
+          {categoryName}
+        </span>
+      )}
+
+      {/* Title */}
+      <h3 className="font-display text-lg font-semibold text-black leading-snug mt-1 group-hover:text-[#c1121f] transition-colors line-clamp-2">
+        {bp.title}
+      </h3>
+
+      {/* Excerpt */}
+      {bp.excerpt && (
+        <p className="text-sm text-gray-mid line-clamp-2 mt-1.5">
+          {bp.excerpt}
+        </p>
+      )}
+
+      {/* Date + Arrow */}
+      <div className="flex items-center justify-between mt-2">
+        {bp.published_at && (
+          <span className="text-xs text-gray-mid">
+            {new Date(bp.published_at).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </span>
+        )}
+        <ArrowRight size={14} className="text-gray-400" />
+      </div>
+    </Link>
   );
 }

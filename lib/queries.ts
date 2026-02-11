@@ -29,6 +29,8 @@ import type {
   Amenity,
   IdentityOption,
   NeighborhoodGrouped,
+  NewsletterSection,
+  NewsletterPost,
 } from "./types";
 
 function sb() {
@@ -1038,4 +1040,56 @@ export async function getAdjacentNewsletters(
     prev: prevRes.data?.[0] ?? null,
     next: nextRes.data?.[0] ?? null,
   };
+}
+
+/* ============================================================
+   NEWSLETTER SECTIONS & POSTS (structured content)
+   ============================================================ */
+
+/** Sections for a newsletter issue, ordered by sort_order */
+export async function getNewsletterSections(
+  newsletterId: string
+): Promise<NewsletterSection[]> {
+  const { data, error } = await sb()
+    .from("newsletter_sections")
+    .select("*")
+    .eq("newsletter_id", newsletterId)
+    .order("sort_order", { ascending: true })
+    .returns<NewsletterSection[]>();
+  if (error) {
+    console.error("getNewsletterSections error:", error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+/** Blog posts linked to a newsletter, joined with blog_posts, ordered by position */
+export interface NewsletterPostWithBlog extends NewsletterPost {
+  blog_post: {
+    id: string;
+    title: string;
+    slug: string;
+    excerpt: string | null;
+    featured_image_url: string | null;
+    published_at: string | null;
+    category_id: string | null;
+  } | null;
+}
+
+export async function getNewsletterPosts(
+  newsletterId: string
+): Promise<NewsletterPostWithBlog[]> {
+  const { data, error } = await sb()
+    .from("newsletter_posts")
+    .select(
+      "*, blog_post:post_id(id, title, slug, excerpt, featured_image_url, published_at, category_id)"
+    )
+    .eq("newsletter_id", newsletterId)
+    .order("position", { ascending: true })
+    .returns<NewsletterPostWithBlog[]>();
+  if (error) {
+    console.error("getNewsletterPosts error:", error.message);
+    return [];
+  }
+  return data ?? [];
 }
