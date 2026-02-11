@@ -956,3 +956,86 @@ export async function getNewsletterTypes(): Promise<NewsletterType[]> {
   }
   return data ?? [];
 }
+
+/** Single newsletter by issue_slug */
+export async function getNewsletterBySlug(
+  issueSlug: string
+): Promise<Newsletter | null> {
+  const { data, error } = await sb()
+    .from("newsletters")
+    .select("*")
+    .eq("issue_slug", issueSlug)
+    .eq("status", "published")
+    .eq("is_public", true)
+    .single()
+    .returns<Newsletter>();
+  if (error && error.code !== "PGRST116") {
+    console.error("getNewsletterBySlug error:", error.message);
+    return null;
+  }
+  return data;
+}
+
+/** Newsletters filtered by type name, with optional search */
+export async function getNewslettersByType(opts?: {
+  typeName?: string;
+  search?: string;
+  limit?: number;
+}): Promise<Newsletter[]> {
+  try {
+    let q = sb()
+      .from("newsletters")
+      .select("*")
+      .eq("status", "published")
+      .eq("is_public", true)
+      .order("issue_date", { ascending: false });
+
+    if (opts?.typeName) q = q.eq("name", opts.typeName);
+    if (opts?.search)
+      q = q.or(
+        `subject_line.ilike.%${opts.search}%,preview_text.ilike.%${opts.search}%`
+      );
+    if (opts?.limit) q = q.limit(opts.limit);
+
+    const { data, error } = await q.returns<Newsletter[]>();
+    if (error) {
+      console.error("getNewslettersByType error:", error.message);
+      return [];
+    }
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Previous and next newsletters (by issue_date) for navigation */
+export async function getAdjacentNewsletters(
+  issueDate: string,
+  currentId: string
+): Promise<{ prev: Newsletter | null; next: Newsletter | null }> {
+  const [prevRes, nextRes] = await Promise.all([
+    sb()
+      .from("newsletters")
+      .select("*")
+      .eq("status", "published")
+      .eq("is_public", true)
+      .lt("issue_date", issueDate)
+      .order("issue_date", { ascending: false })
+      .limit(1)
+      .returns<Newsletter[]>(),
+    sb()
+      .from("newsletters")
+      .select("*")
+      .eq("status", "published")
+      .eq("is_public", true)
+      .gt("issue_date", issueDate)
+      .order("issue_date", { ascending: true })
+      .limit(1)
+      .returns<Newsletter[]>(),
+  ]);
+
+  return {
+    prev: prevRes.data?.[0] ?? null,
+    next: nextRes.data?.[0] ?? null,
+  };
+}
