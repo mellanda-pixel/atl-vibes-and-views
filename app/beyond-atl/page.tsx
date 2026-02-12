@@ -16,6 +16,8 @@ import type { Metadata } from "next";
    This file handles data-fetching only.
    ============================================================ */
 
+export const revalidate = 3600; // ISR: regenerate every hour
+
 const PH_HERO = "https://placehold.co/1920x600/1a1a1a/e6c46d?text=Beyond+ATL";
 
 export const metadata: Metadata = {
@@ -35,14 +37,12 @@ export default async function BeyondATLLandingPage({
   const { q } = await searchParams;
   const search = q?.trim() || undefined;
 
-  /* ── Data fetch ── */
-  const [cities, blogPosts] = await Promise.all([
+  /* ── Data fetch — single parallel batch ── */
+  const [cities, blogPosts, mediaItems] = await Promise.all([
     getCities({ excludePrimary: true }),
     getBlogPosts({ limit: 8 }),
+    getMediaItems({ limit: 4 }).catch(() => []),
   ]);
-
-  /* ── Media: sitewide videos for feed ── */
-  let mediaItems = await getMediaItems({ limit: 4 }).catch(() => []);
 
   /* ── Search: filter cities ── */
   const filteredCities = search
