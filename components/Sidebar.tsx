@@ -234,6 +234,55 @@ export function SocialFollowWidget() {
 /* ============================================================
    SUBMIT EVENT CTA (Sidebar B)
    ============================================================ */
+/* ============================================================
+   TOP EVENTS WIDGET (Sidebar)
+   — Upcoming events list with dates + See All link
+   ============================================================ */
+export function TopEventsWidget({
+  title = "Upcoming Events",
+  events,
+  seeAllHref = "/hub/events",
+}: {
+  title?: string;
+  events: { title: string; slug: string; start_date?: string | null }[];
+  seeAllHref?: string;
+}) {
+  return (
+    <SidebarWidget>
+      <WidgetTitle className="text-[#c1121f]">{title}</WidgetTitle>
+      <ul className="space-y-1.5">
+        {events.map((e) => (
+          <li key={e.slug}>
+            <Link
+              href={`/hub/events/${e.slug}`}
+              className="flex items-center justify-between text-sm text-gray-dark hover:text-black transition-colors py-1"
+            >
+              <span className="line-clamp-1">{e.title}</span>
+              {e.start_date && (
+                <span className="text-xs text-gray-mid whitespace-nowrap ml-2">
+                  {new Date(e.start_date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
+              )}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <Link
+        href={seeAllHref}
+        className="inline-block mt-4 text-xs font-semibold uppercase tracking-eyebrow text-red-brand hover:text-black transition-colors"
+      >
+        See All Events →
+      </Link>
+    </SidebarWidget>
+  );
+}
+
+/* ============================================================
+   SUBMIT EVENT CTA (Sidebar B)
+   ============================================================ */
 export function SubmitEventCTA() {
   return (
     <SidebarWidget className="bg-[#f8f5f0] border-none">
