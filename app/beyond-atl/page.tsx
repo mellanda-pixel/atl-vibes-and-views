@@ -1,11 +1,11 @@
-import {
-  AreaLandingContent,
-  buildFeed,
-} from "@/components/AreaLandingContent";
+import { AreaLandingContent } from "@/components/AreaLandingContent";
 import {
   getCities,
   getBlogPosts,
+  getBusinesses,
   getMediaItems,
+  getNeighborhoodsByPopularity,
+  getUpcomingEvents,
 } from "@/lib/queries";
 import type { Metadata } from "next";
 
@@ -17,8 +17,6 @@ import type { Metadata } from "next";
    ============================================================ */
 
 export const revalidate = 3600; // ISR: regenerate every hour
-
-const PH_HERO = "https://placehold.co/1920x600/1a1a1a/e6c46d?text=Beyond+ATL";
 
 export const metadata: Metadata = {
   title: "Beyond ATL — Explore Cities Outside Atlanta | ATL Vibes & Views",
@@ -39,10 +37,22 @@ export default async function BeyondATLLandingPage({
 
   /* ── Data fetch — single parallel batch ── */
   const fetchStart = Date.now();
-  const [cities, blogPosts, mediaItems] = await Promise.all([
+  const [
+    cities,
+    videos,
+    stories,
+    guides,
+    businesses,
+    upcomingEvents,
+    topNeighborhoods,
+  ] = await Promise.all([
     getCities({ excludePrimary: true }),
-    getBlogPosts({ limit: 8 }),
-    getMediaItems({ limit: 4 }).catch(() => []),
+    getMediaItems({ limit: 3, mediaType: "video" }),
+    getBlogPosts({ limit: 3, contentType: "news" }),
+    getBlogPosts({ limit: 3, contentType: "guide" }),
+    getBusinesses({ featured: true, limit: 6 }),
+    getUpcomingEvents({ limit: 4 }),
+    getNeighborhoodsByPopularity({ limit: 8 }),
   ]);
   console.log(`[/beyond-atl] All queries completed in ${Date.now() - fetchStart}ms`);
 
@@ -51,27 +61,24 @@ export default async function BeyondATLLandingPage({
     ? cities.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
     : cities;
 
-  /* ── Masonry feed: mix blogs + videos ── */
-  const feed = buildFeed(blogPosts, mediaItems);
-
   return (
     <AreaLandingContent
-      heroEyebrow="Beyond ATL"
-      heroTitle="Explore Beyond Atlanta"
-      heroIntro="From Decatur to Marietta, discover the vibrant cities and communities just outside Atlanta."
-      heroImageUrl={PH_HERO}
       search={search}
       searchResultsLabel="Cities"
       filteredCards={filteredCities}
       cards={cities}
       cardLinkPrefix="/beyond-atl/"
-      cardsEmptyText="City listings coming soon."
       mapCtaText="Explore All Cities →"
       mapCtaHref="/beyond-atl"
-      feedEyebrow="Guides & Stories"
-      feedTitle="Explore Beyond Atlanta"
-      feedSeeAllHref="/city-watch"
-      feed={feed}
+      videos={videos}
+      stories={stories}
+      guides={guides}
+      storiesSeeAllHref="/city-watch"
+      guidesSeeAllHref="/hub/atlanta-guide"
+      businesses={businesses}
+      businessesSeeAllHref="/hub/eats-and-drinks"
+      topNeighborhoods={topNeighborhoods}
+      upcomingEvents={upcomingEvents}
     />
   );
 }
