@@ -116,7 +116,7 @@ export default async function BusinessHubPage({
   let featuredQuery = supabase
     .from("business_listings")
     .select(
-      "id, business_name, slug, tagline, street_address, city, price_range, tier, logo, latitude, longitude, neighborhood_id, category_id, created_at, neighborhoods(name, slug), categories(name, slug)"
+      "id, business_name, slug, tagline, street_address, city_id, price_range, tier, logo, latitude, longitude, neighborhood_id, category_id, created_at, neighborhoods(name, slug), categories(name, slug), cities(name)"
     )
     .eq("status", "active")
     .eq("tier", "Premium")
@@ -151,6 +151,7 @@ export default async function BusinessHubPage({
 
   const featuredBusinesses = (rawFeatured ?? []).map((b: any) => ({
     ...b,
+    city: b.cities?.name ?? null,
     primary_image_url: featuredImages[b.id] || b.logo || null,
   }));
 
@@ -158,7 +159,7 @@ export default async function BusinessHubPage({
   let gridQuery = supabase
     .from("business_listings")
     .select(
-      "id, business_name, slug, tagline, street_address, city, price_range, tier, logo, latitude, longitude, neighborhood_id, category_id, created_at, neighborhoods(name, slug), categories(name, slug)",
+      "id, business_name, slug, tagline, street_address, city_id, price_range, tier, logo, latitude, longitude, neighborhood_id, category_id, created_at, neighborhoods(name, slug), categories(name, slug), cities(name)",
       { count: "exact" }
     )
     .eq("status", "active")
@@ -182,7 +183,7 @@ export default async function BusinessHubPage({
   }
   if (sp.q) {
     gridQuery = gridQuery.or(
-      `business_name.ilike.%${sp.q}%,tagline.ilike.%${sp.q}%,description.ilike.%${sp.q}%,street_address.ilike.%${sp.q}%,city.ilike.%${sp.q}%`
+      `business_name.ilike.%${sp.q}%,tagline.ilike.%${sp.q}%,description.ilike.%${sp.q}%,street_address.ilike.%${sp.q}%`
     );
   }
 
@@ -259,6 +260,7 @@ export default async function BusinessHubPage({
 
   const gridBusinesses = (rawGrid ?? []).map((b: any) => ({
     ...b,
+    city: b.cities?.name ?? null,
     primary_image_url: gridImages[b.id] || b.logo || null,
   }));
 
