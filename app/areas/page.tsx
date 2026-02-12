@@ -19,6 +19,8 @@ import type { Metadata } from "next";
    DO NOT TOUCH: app/page.tsx, app/areas/[slug]/page.tsx, components/Sidebar.tsx
    ============================================================ */
 
+export const revalidate = 3600; // ISR: regenerate every hour
+
 const PH_HERO = "https://placehold.co/1920x600/1a1a1a/e6c46d?text=Explore+Atlanta";
 
 const DEFAULT_TITLE = "Explore Atlanta by Area";
@@ -48,25 +50,16 @@ export default async function AreasLandingPage({
   const { q } = await searchParams;
   const search = q?.trim() || undefined;
 
-  /* ── Data fetch ── */
-  const ci = await getContentIndexByToken("page-areas", { targetType: "area", activeUrl: "/areas" }).catch(() => null);
-
-  const [areas, blogPosts] =
-    await Promise.all([
-      getAreas(),
-      getBlogPosts({ limit: 8 }),
-    ]);
-
-  /* ── Media: prefer area-linked videos, fallback to sitewide ── */
-  const areaIds = areas.map((a) => a.id);
-  let mediaItems = await getMediaItems({
-    limit: 4,
-    targetType: "area",
-    targetIds: areaIds,
-  }).catch(() => []);
-  if (mediaItems.length === 0) {
-    mediaItems = await getMediaItems({ limit: 4 }).catch(() => []);
-  }
+  /* ── Data fetch — single parallel batch ── */
+  const [ci, areas, blogPosts, mediaItems] = await Promise.all([
+    getContentIndexByToken("page-areas", {
+      targetType: "area",
+      activeUrl: "/areas",
+    }).catch(() => null),
+    getAreas(),
+    getBlogPosts({ limit: 8 }),
+    getMediaItems({ limit: 4 }).catch(() => []),
+  ]);
 
   /* ── Hero fields from content_index (fallback to defaults) ── */
   const heroTitle = ci?.page_title || DEFAULT_TITLE;
