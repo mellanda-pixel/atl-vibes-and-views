@@ -114,6 +114,9 @@ export function buildFeed(
   let videosPlaced = 0;
 
   while (blogIdx < blogCards.length || videoIdx < videoCards.length) {
+    const prevBlogIdx = blogIdx;
+    const prevVideoIdx = videoIdx;
+
     for (let i = 0; i < 4 && blogIdx < blogCards.length; i++) {
       const card = blogCards[blogIdx++];
       if (!usedIds.has(card.id)) {
@@ -129,6 +132,10 @@ export function buildFeed(
         videosPlaced++;
       }
     }
+
+    /* Safety: break if neither index advanced (prevents infinite loop
+       when remaining videos exceed the videosPlaced cap) */
+    if (blogIdx === prevBlogIdx && videoIdx === prevVideoIdx) break;
   }
 
   return feed;
