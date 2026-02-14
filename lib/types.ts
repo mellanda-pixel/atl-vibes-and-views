@@ -39,6 +39,11 @@ export type Database = {
       script_batches: { Row: ScriptBatch; Insert: Partial<ScriptBatch>; Update: Partial<ScriptBatch> };
       content_calendar: { Row: ContentCalendar; Insert: Partial<ContentCalendar>; Update: Partial<ContentCalendar> };
       pillars: { Row: Pillar; Insert: Partial<Pillar>; Update: Partial<Pillar> };
+      event_images: { Row: EventImage; Insert: Partial<EventImage>; Update: Partial<EventImage> };
+      event_tags: { Row: EventTag; Insert: Partial<EventTag>; Update: Partial<EventTag> };
+      post_events: { Row: PostEvent; Insert: Partial<PostEvent>; Update: Partial<PostEvent> };
+      post_neighborhoods: { Row: PostNeighborhood; Insert: Partial<PostNeighborhood>; Update: Partial<PostNeighborhood> };
+      event_tier_pricing: { Row: EventTierPricing; Insert: Partial<EventTierPricing>; Update: Partial<EventTierPricing> };
     };
   };
 };
