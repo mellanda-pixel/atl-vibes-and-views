@@ -36,6 +36,9 @@ export type Database = {
       newsletters: { Row: Newsletter; Insert: Partial<Newsletter>; Update: Partial<Newsletter> };
       submissions: { Row: Submission; Insert: Partial<Submission>; Update: Partial<Submission> };
       sponsors: { Row: Sponsor; Insert: Partial<Sponsor>; Update: Partial<Sponsor> };
+      script_batches: { Row: ScriptBatch; Insert: Partial<ScriptBatch>; Update: Partial<ScriptBatch> };
+      content_calendar: { Row: ContentCalendar; Insert: Partial<ContentCalendar>; Update: Partial<ContentCalendar> };
+      pillars: { Row: Pillar; Insert: Partial<Pillar>; Update: Partial<Pillar> };
     };
   };
 };
