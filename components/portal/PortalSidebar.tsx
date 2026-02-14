@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 
@@ -38,6 +39,7 @@ export function PortalSidebar({
   businessCard,
 }: PortalSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
   const isLight = theme === "light";
 
   const sidebarWidth = isLight ? "w-[260px]" : "w-[240px]";
@@ -138,7 +140,10 @@ export function PortalSidebar({
               )}
 
               {group.items.map((item) => {
-                const isActive = activePath === item.path;
+                const isActive =
+                  item.path === "/admin" || item.path === "/dashboard"
+                    ? pathname === item.path
+                    : pathname === item.path || pathname.startsWith(item.path + "/");
 
                 const itemBase = isLight
                   ? "flex items-center gap-2.5 px-3 py-2 text-[13px] font-body border-l-[3px] transition-colors"
