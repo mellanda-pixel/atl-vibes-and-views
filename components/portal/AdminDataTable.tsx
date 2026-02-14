@@ -14,7 +14,7 @@ interface AdminDataTableProps<T> {
   emptyMessage?: string;
 }
 
-export function AdminDataTable<T extends Record<string, unknown>>({
+export function AdminDataTable<T>({
   columns,
   data,
   onRowClick,
@@ -70,7 +70,7 @@ export function AdminDataTable<T extends Record<string, unknown>>({
                   >
                     {col.render
                       ? col.render(item)
-                      : (item[col.key] as React.ReactNode)}
+                      : ((item as Record<string, unknown>)[col.key] as React.ReactNode)}
                   </td>
                 ))}
                 {actions && (
