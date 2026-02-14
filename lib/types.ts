@@ -30,6 +30,12 @@ export type Database = {
       post_businesses: { Row: PostBusiness; Insert: Partial<PostBusiness>; Update: Partial<PostBusiness> };
       subscriptions: { Row: Subscription; Insert: Partial<Subscription>; Update: Partial<Subscription> };
       users: { Row: User; Insert: Partial<User>; Update: Partial<User> };
+      scripts: { Row: Script; Insert: Partial<Script>; Update: Partial<Script> };
+      published_content: { Row: PublishedContent; Insert: Partial<PublishedContent>; Update: Partial<PublishedContent> };
+      media_items: { Row: MediaItem; Insert: Partial<MediaItem>; Update: Partial<MediaItem> };
+      newsletters: { Row: Newsletter; Insert: Partial<Newsletter>; Update: Partial<Newsletter> };
+      submissions: { Row: Submission; Insert: Partial<Submission>; Update: Partial<Submission> };
+      sponsors: { Row: Sponsor; Insert: Partial<Sponsor>; Update: Partial<Sponsor> };
     };
   };
 };
@@ -451,6 +457,23 @@ export interface MediaItemLink {
   sort_order: number;
   created_at: string;
   updated_at: string;
+}
+
+/* --- Published content tracking --- */
+
+export interface PublishedContent {
+  id: string;
+  source_story_id?: string;
+  post_id?: string;
+  media_item_id?: string;
+  platform: string;
+  content_format: string;
+  platform_post_id?: string;
+  title?: string;
+  published_url?: string;
+  published_at?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /* --- Newsletter structured content tables --- */
