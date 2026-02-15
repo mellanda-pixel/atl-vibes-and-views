@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { createServerClient } from "@/lib/supabase";
 import { SponsorDetailClient } from "./SponsorDetailClient";
+import type { SponsorData, DeliverableRow, FulfillmentLogRow, PostRow, CampaignRow, CreativeRow, FlightRow } from "./SponsorDetailClient";
 
 export const metadata: Metadata = {
   title: "Sponsor Detail | Admin CMS | ATL Vibes & Views",
@@ -19,86 +20,70 @@ export default async function SponsorDetailPage({
   const supabase = createServerClient();
 
   // Fetch sponsor
-  const { data: sponsor } = (await supabase
+  const { data: sponsor } = await supabase
     .from("sponsors")
     .select("*")
     .eq("id", id)
-    .single()
-  ) as {
-    data: {
-      id: string;
-      sponsor_name: string;
-      business_id: string | null;
-      contact_name: string | null;
-      contact_email: string | null;
-      contact_phone: string | null;
-      campaign_name: string | null;
-      campaign_start: string | null;
-      campaign_end: string | null;
-      campaign_value: number | null;
-      placement: unknown;
-      talking_points: string | null;
-      status: string;
-      notes: string | null;
-      package_type: string | null;
-      placements_total: number | null;
-      placements_used: number | null;
-      category_focus: string | null;
-      neighborhood_focus: string | null;
-      is_active: boolean | null;
-      created_at: string;
-      updated_at: string;
-    } | null;
-  };
+    .single();
 
   // Fetch related blog posts via post_sponsors
-  const { data: postSponsors } = (await supabase
+  const { data: postSponsors } = await supabase
     .from("post_sponsors")
     .select("post_id, tier, published_at")
-    .eq("sponsor_id", id)
-  ) as {
-    data: { post_id: string; tier: string | null; published_at: string | null }[] | null;
-  };
+    .eq("sponsor_id", id);
 
-  // Fetch post titles for linked posts
-  const postIds = (postSponsors ?? []).map((ps) => ps.post_id);
-  let posts: { id: string; title: string; slug: string; status: string; published_at: string | null }[] = [];
-
+  const postIds = (postSponsors ?? []).map((ps: { post_id: string }) => ps.post_id);
+  let posts: PostRow[] = [];
   if (postIds.length > 0) {
-    const { data: postData } = (await supabase
+    const { data } = await supabase
       .from("blog_posts")
       .select("id, title, slug, status, published_at")
-      .in("id", postIds)
-    ) as {
-      data: { id: string; title: string; slug: string; status: string; published_at: string | null }[] | null;
-    };
-    posts = postData ?? [];
+      .in("id", postIds);
+    posts = (data ?? []) as PostRow[];
   }
 
-  // Fetch ad campaigns for this sponsor
-  const { data: campaigns } = (await supabase
+  // Fetch ad campaigns
+  const { data: campaigns } = await supabase
     .from("ad_campaigns")
     .select("id, name, start_date, end_date, budget, status")
     .eq("sponsor_id", id)
-    .order("start_date", { ascending: false })
-  ) as {
-    data: { id: string; name: string; start_date: string; end_date: string; budget: number | null; status: string }[] | null;
-  };
+    .order("start_date", { ascending: false });
 
-  // Fetch ad creatives for campaigns
-  const campaignIds = (campaigns ?? []).map((c) => c.id);
-  let creatives: { id: string; campaign_id: string; creative_type: string; headline: string | null; target_url: string; image_url: string | null; is_active: boolean }[] = [];
-
+  // Fetch ad creatives for this sponsor's campaigns
+  const campaignIds = (campaigns ?? []).map((c: { id: string }) => c.id);
+  let creatives: CreativeRow[] = [];
   if (campaignIds.length > 0) {
-    const { data: creativeData } = (await supabase
+    const { data } = await supabase
       .from("ad_creatives")
       .select("id, campaign_id, creative_type, headline, target_url, image_url, is_active")
-      .in("campaign_id", campaignIds)
-    ) as {
-      data: { id: string; campaign_id: string; creative_type: string; headline: string | null; target_url: string; image_url: string | null; is_active: boolean }[] | null;
-    };
-    creatives = creativeData ?? [];
+      .in("campaign_id", campaignIds);
+    creatives = (data ?? []) as CreativeRow[];
   }
+
+  // Fetch ad flights for this sponsor's campaigns
+  let flights: FlightRow[] = [];
+  if (campaignIds.length > 0) {
+    const { data } = await supabase
+      .from("ad_flights")
+      .select("id, campaign_id, placement_id, creative_id, start_date, end_date, status, impressions, clicks")
+      .in("campaign_id", campaignIds)
+      .order("start_date", { ascending: false });
+    flights = (data ?? []) as FlightRow[];
+  }
+
+  // Fetch sponsor deliverables (fulfillment tracking)
+  const { data: deliverables } = await supabase
+    .from("sponsor_deliverables")
+    .select("id, deliverable_type, label, quantity_promised, quantity_delivered, status, due_date, completed_at, notes")
+    .eq("sponsor_id", id)
+    .order("due_date", { ascending: true });
+
+  // Fetch fulfillment log entries
+  const { data: fulfillmentLog } = await supabase
+    .from("fulfillment_log")
+    .select("id, deliverable_id, action, content_url, notes, logged_at, logged_by")
+    .eq("sponsor_id", id)
+    .order("logged_at", { ascending: false });
 
   if (!sponsor) {
     return (
@@ -110,10 +95,13 @@ export default async function SponsorDetailPage({
 
   return (
     <SponsorDetailClient
-      sponsor={sponsor}
+      sponsor={sponsor as SponsorData}
       posts={posts}
-      campaigns={campaigns ?? []}
+      campaigns={(campaigns ?? []) as CampaignRow[]}
       creatives={creatives}
+      flights={flights}
+      deliverables={(deliverables ?? []) as DeliverableRow[]}
+      fulfillmentLog={(fulfillmentLog ?? []) as FulfillmentLogRow[]}
     />
   );
 }
